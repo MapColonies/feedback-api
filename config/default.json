@@ -1,0 +1,41 @@
+{
+  "openapiConfig": {
+    "filePath": "./openapi3.yaml",
+    "basePath": "/docs",
+    "rawPath": "/api",
+    "uiPath": "/api"
+  },
+  "telemetry": {
+    "logger": {
+      "level": "info",
+      "prettyPrint": false
+    }
+  },
+  "server": {
+    "port": "8080",
+    "request": {
+      "payload": {
+        "limit": "1mb"
+      }
+    },
+    "response": {
+      "compression": {
+        "enabled": true,
+        "options": null
+      }
+    }
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "username": "",
+    "password": "",
+    "enableSslAuth": false,
+    "sslPaths": {
+      "ca": "",
+      "key": "",
+      "cert": ""
+    },
+    "database": 0
+  }
+}
