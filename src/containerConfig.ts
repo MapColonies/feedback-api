@@ -1,4 +1,5 @@
 import config from 'config';
+import { Producer } from 'kafkajs';
 import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
@@ -12,6 +13,7 @@ import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
 import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './redis';
+import { kafkaClientFactory } from './kafka';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -42,6 +44,19 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
         cleanupRegistry.register({ func: redis.disconnect.bind(redis), id: SERVICES.REDIS });
         await redis.connect();
+      },
+    },
+    {
+      token: SERVICES.KAFKA,
+      provider: { useFactory: kafkaClientFactory },
+      postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+        const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
+        try {
+          await kafkaProducer.connect();
+          logger.info('Connected to Kafka');
+        } catch (err) {
+          logger.error('Failed to connect to Kafka', err);
+        }
       },
     },
     {

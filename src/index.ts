@@ -7,7 +7,6 @@ import config from 'config';
 import { DEFAULT_SERVER_PORT, HEALTHCHECK, ON_SIGNAL, SERVICES } from './common/constants';
 import { getApp } from './app';
 
-
 const port: number = config.get<number>('server.port') || DEFAULT_SERVER_PORT;
 
 void getApp()
@@ -24,10 +23,9 @@ void getApp()
     });
   })
   .catch(async (error: Error) => {
-    const errorLogger =
-    container.isRegistered(SERVICES.LOGGER)
-        ? container.resolve<Logger>(SERVICES.LOGGER).error.bind(container.resolve<Logger>(SERVICES.LOGGER))
-        : console.error;
+    const errorLogger = container.isRegistered(SERVICES.LOGGER)
+      ? container.resolve<Logger>(SERVICES.LOGGER).error.bind(container.resolve<Logger>(SERVICES.LOGGER))
+      : console.error;
     errorLogger({ msg: '😢 - failed initializing the server', err: error });
 
     if (container.isRegistered(ON_SIGNAL)) {

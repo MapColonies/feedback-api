@@ -60,5 +60,26 @@
       "__name": "REDIS_DATABASE",
       "__format": "number"
     }
-  }
+  },
+  "kafka": {
+    "brokers": "KAFKA_BROKERS",
+    "clientId": "KAFKA_CLIENT_ID",
+    "sasl": {
+      "mechanism": "KAFKA_SASL_MECHANISM",
+      "plain": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      },
+      "scram-sha-256": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      },
+      "scram-sha-512": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      }
+    }
+  },
+  "kafkaProducer": {},
+  "outputTopic": "KAFKA_OUTPUT_TOPIC"
 }

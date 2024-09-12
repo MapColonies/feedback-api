@@ -1,14 +1,20 @@
 import { Logger } from '@map-colonies/js-logger';
 import { inject, injectable } from 'tsyringe';
+import { Producer } from 'kafkajs';
 import { SERVICES } from '../../common/constants';
-import { FeedbackResponse, GeocodingResponse } from '../../common/interfaces';
+import { FeedbackResponse, GeocodingResponse, IConfig } from '../../common/interfaces';
 import { RedisClient } from '../../redis';
 import { NotFoundError } from '../../common/errors';
 import { IFeedbackModel } from './feedback';
 
 @injectable()
 export class FeedbackManager {
-  public constructor(@inject(SERVICES.LOGGER) private readonly logger: Logger, @inject(SERVICES.REDIS) private readonly redis: RedisClient) {}
+  public constructor(
+    @inject(SERVICES.LOGGER) private readonly logger: Logger,
+    @inject(SERVICES.REDIS) private readonly redis: RedisClient,
+    @inject(SERVICES.KAFKA) private readonly kafkaProducer: Producer,
+    @inject(SERVICES.CONFIG) private readonly config: IConfig
+  ) {}
 
   public async createFeedback(feedback: IFeedbackModel): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
@@ -20,6 +26,7 @@ export class FeedbackManager {
     };
     this.logger.info({ msg: 'creating feedback', requestId });
     // console.log(feedbackResponse)
+    await this.send(feedbackResponse);
     return feedbackResponse;
   }
 
@@ -32,5 +39,24 @@ export class FeedbackManager {
       return geocodingResponse;
     }
     throw new NotFoundError('the current request was not found');
+  }
+
+  public async send(message: FeedbackResponse): Promise<void> {
+    const topic = this.config.get<string>('outputTopic');
+    this.logger.info(`Kafka Send message. Topic: ${topic}`);
+    try {
+      await this.kafkaProducer.send({
+        topic,
+        messages: [
+          {
+            value: JSON.stringify(message),
+          },
+        ],
+      });
+      this.logger.info(`Kafka message sent. Topic: ${topic}`);
+    } catch (error) {
+      this.logger.error(`Error uploading response to kafka`);
+      throw error;
+    }
   }
 }

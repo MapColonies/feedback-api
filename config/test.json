@@ -11,5 +11,9 @@
       "cert": ""
     },
     "database": 1
-  }
+  },
+  "kafka": {},
+  "kafkaConsumer": {},
+  "kafkaProducer": {},
+  "outputTopic": ""
 }

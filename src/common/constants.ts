@@ -13,6 +13,7 @@ export const SERVICES: Record<string, symbol> = {
   TRACER: Symbol('Tracer'),
   METER: Symbol('Meter'),
   REDIS: Symbol('Redis'),
+  KAFKA: Symbol('Kafka'),
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
