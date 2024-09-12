@@ -1,4 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export interface IFeedbackModel {
-  requestId: string;
-  chosenResultId: number;
+  request_id: string;
+  chosen_result_id: number;
 }

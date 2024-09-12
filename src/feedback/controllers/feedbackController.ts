@@ -6,8 +6,9 @@ import { injectable, inject } from 'tsyringe';
 import { SERVICES } from '../../common/constants';
 import { IFeedbackModel } from '../models/feedback';
 import { FeedbackManager } from '../models/feedbackManager';
+import { FeedbackResponse } from '../../common/interfaces';
 
-type CreateFeedbackHandler = RequestHandler<undefined, IFeedbackModel, IFeedbackModel>;
+type CreateFeedbackHandler = RequestHandler<undefined, FeedbackResponse, IFeedbackModel>;
 
 @injectable()
 export class FeedbackController {

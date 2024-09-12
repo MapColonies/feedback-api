@@ -13,13 +13,14 @@ paths:
       tags:
         - feedback
       summary: creates a new record of a chosen result from Geocoding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/feedback'
       responses:
         204:
           description: Feedback has been sent succesfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/feedback'
         400:
           description: Bad Request
           content:

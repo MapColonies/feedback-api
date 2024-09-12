@@ -11,16 +11,15 @@ export class FeedbackManager {
   public constructor(@inject(SERVICES.LOGGER) private readonly logger: Logger, @inject(SERVICES.REDIS) private readonly redis: RedisClient) {}
 
   public async createFeedback(feedback: IFeedbackModel): Promise<FeedbackResponse> {
-    const requestId = feedback.requestId;
-
+    const requestId = feedback.request_id;
     const feedbackResponse: FeedbackResponse = {
       requestId: requestId,
-      chosenResultId: feedback.chosenResultId,
+      chosenResultId: feedback.chosen_result_id,
       responseTime: new Date(),
       geocodingResponse: await this.getGeocodingResponse(requestId),
     };
     this.logger.info({ msg: 'creating feedback', requestId });
-
+    // console.log(feedbackResponse)
     return feedbackResponse;
   }
 

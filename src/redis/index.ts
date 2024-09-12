@@ -35,7 +35,7 @@ export type RedisClient = ReturnType<typeof createClient>;
 export const redisClientFactory: FactoryFunction<RedisClient> = (container: DependencyContainer): RedisClient => {
   const logger = container.resolve<Logger>(SERVICES.LOGGER);
   const config = container.resolve<IConfig>(SERVICES.CONFIG);
-  const dbConfig = config.get<RedisConfig>('db.redis');
+  const dbConfig = config.get<RedisConfig>('redis');
   const connectionOptions = createConnectionOptions(dbConfig);
 
   const redisClient = createClient(connectionOptions)
