@@ -38,8 +38,10 @@
     },
     "database": 0
   },
-  "kafka": {},
+  "kafka": {
+    "brokers": "localhost:9092"
+  },
   "kafkaConsumer": {},
   "kafkaProducer": {},
-  "outputTopic": ""
+  "outputTopic": "topic"
 }
