@@ -13,6 +13,7 @@ module.exports = {
     '!**/controllers/**',
     '!**/routes/**',
     '!**/redis/**',
+    '!**/kafka/**',
     '!<rootDir>/src/*',
   ],
   coverageDirectory: '<rootDir>/coverage',
