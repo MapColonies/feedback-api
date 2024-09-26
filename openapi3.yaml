@@ -27,6 +27,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
 components:
   schemas:
     error:

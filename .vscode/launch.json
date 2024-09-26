@@ -29,6 +29,19 @@
         "TELEMETRY_METRICS_URL": "http://localhost:55681/v1/metrics"
         // "OPENAPI_FILE_PATH": "./openapi3.yaml"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "test",
+      "args": ["--config=./tests/configurations/unit/jest.config.js"],
+      "internalConsoleOptions": "openOnSessionStart",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "console": "integratedTerminal",
+      "windows": {
+        "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+      }
     }
   ]
 }

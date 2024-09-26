@@ -1,10 +1,10 @@
 import { container } from 'tsyringe';
 import { Application } from 'express';
-import { registerExternalValues } from './containerConfig';
+import { registerExternalValues, RegisterOptions } from './containerConfig';
 import { ServerBuilder } from './serverBuilder';
 
-async function getApp(): Promise<Application> {
-  await registerExternalValues();
+async function getApp(registerOptions?: RegisterOptions): Promise<Application> {
+  await registerExternalValues(registerOptions);
   const app = container.resolve(ServerBuilder).build();
   return app;
 }

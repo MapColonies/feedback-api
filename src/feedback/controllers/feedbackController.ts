@@ -22,9 +22,13 @@ export class FeedbackController {
     this.createdFeedbackCounter = meter.createCounter('created_feedback');
   }
 
-  public createFeedback: CreateFeedbackHandler = async (req, res) => {
-    const createdFeedback = this.manager.createFeedback(req.body);
-    this.createdFeedbackCounter.add(1);
-    return res.status(httpStatus.NO_CONTENT).json(await createdFeedback);
+  public createFeedback: CreateFeedbackHandler = async (req, res, next) => {
+    try {
+      const createdFeedback = this.manager.createFeedback(req.body);
+      this.createdFeedbackCounter.add(1);
+      return res.status(httpStatus.NO_CONTENT).json(await createdFeedback);
+    } catch (error) {
+      return next(error);
+    }
   };
 }
