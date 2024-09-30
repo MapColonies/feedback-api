@@ -5,6 +5,7 @@ import { IConfig } from '../common/interfaces';
 
 export const kafkaClientFactory: FactoryFunction<Producer> = (container: DependencyContainer): Producer => {
   const config = container.resolve<IConfig>(SERVICES.CONFIG);
+  process.env['KAFKAJS_NO_PARTITIONER_WARNING'] = '1';
 
   let kafkaConfig = config.get<KafkaConfig>('kafka');
   if (typeof kafkaConfig.brokers === 'string' || kafkaConfig.brokers instanceof String) {

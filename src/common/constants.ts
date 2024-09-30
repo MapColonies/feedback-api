@@ -19,4 +19,3 @@ export const SERVICES: Record<string, symbol> = {
 
 export const ON_SIGNAL = Symbol('onSignal');
 export const HEALTHCHECK = Symbol('healthcheck');
-export const REDIS_SYMBOL = Symbol('REDIS');

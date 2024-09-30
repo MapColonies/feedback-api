@@ -17,5 +17,5 @@
   },
   "kafkaConsumer": {},
   "kafkaProducer": {},
-  "outputTopic": "test-topic"
+  "outputTopic": "testTopic"
 }

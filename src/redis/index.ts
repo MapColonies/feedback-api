@@ -22,7 +22,6 @@ const createConnectionOptions = (redisConfig: RedisConfig): Partial<RedisClientO
       ca: sslPaths.ca !== '' ? readFileSync(sslPaths.ca) : undefined,
     };
   }
-
   return clientOptions;
 };
 
