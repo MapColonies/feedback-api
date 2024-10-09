@@ -44,7 +44,7 @@ describe('feedback', function () {
       await redisConnection.set(redisKey, JSON.stringify(geocodingResponse));
 
       const feedbackModel: IFeedbackModel = {
-        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        request_id: redisKey,
         chosen_result_id: 3,
       };
       const response = await requestSender.createFeedback(feedbackModel);
@@ -52,9 +52,21 @@ describe('feedback', function () {
       expect(response.status).toBe(httpStatusCodes.NO_CONTENT);
     });
   });
+
   describe('Bad Path', function () {
-    // All requests with status code of 400
+    it('should return 400 status code since the chosen_result_id is a string', async function () {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const feedbackModel: any = {
+        request_id: '4ca82def-e73f-4b57-989b-3e285034b971',
+        chosen_result_id: '1',
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const response = await requestSender.createFeedback(feedbackModel);
+
+      expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
+    });
   });
+
   describe('Sad Path', function () {
     it('should return 404 status code since the feedback does not exist', async function () {
       const feedbackModel: IFeedbackModel = {

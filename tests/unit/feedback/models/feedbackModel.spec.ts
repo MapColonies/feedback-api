@@ -7,11 +7,9 @@ import { FeedbackManager } from '../../../../src/feedback/models/feedbackManager
 import { IFeedbackModel } from '../../../../src/feedback/models/feedback';
 import { NotFoundError } from '../../../../src/common/errors';
 
-const mockConnection = jest.fn();
-const mockSend = jest.fn();
 const mockProducer = {
-  connect: mockConnection,
-  send: mockSend,
+  connect: jest.fn(),
+  send: jest.fn(),
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -48,14 +46,17 @@ describe('FeedbackManager', () => {
 
   describe('#createFeadback', () => {
     it('should create feedback without errors', async function () {
-      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3 };
+      const requestId = '417a4635-0c59-4b5c-877c-45b4bbaaac7a';
+      const chosenResultId = 3;
+
+      const feedbackRequest: IFeedbackModel = { request_id: requestId, chosen_result_id: chosenResultId };
       (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
 
       const feedback = await feedbackManager.createFeedback(feedbackRequest);
 
       // expectation
-      expect(feedback.requestId).toBe('417a4635-0c59-4b5c-877c-45b4bbaaac7a');
-      expect(feedback.chosenResultId).toBe(3);
+      expect(feedback.requestId).toBe(requestId);
+      expect(feedback.chosenResultId).toBe(chosenResultId);
       expect(feedback.geocodingResponse).toMatchObject({ geocodingResponse: 'completed' });
       expect(mockedRedis.get).toHaveBeenCalledTimes(1);
     });
@@ -75,6 +76,15 @@ describe('FeedbackManager', () => {
       const feedback = feedbackManager.createFeedback(feedbackRequest);
 
       await expect(feedback).rejects.toThrow(new Error('Kafka error'));
+    });
+
+    it('should not be able to upload feedback to kafka because redis is unavailable', async function () {
+      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3 };
+      (mockedRedis.get as jest.Mock).mockRejectedValue(new Error('Redis error'));
+
+      const feedback = feedbackManager.createFeedback(feedbackRequest);
+
+      await expect(feedback).rejects.toThrow(new Error('Redis error'));
     });
   });
 });

@@ -25,18 +25,21 @@ export class FeedbackManager {
       geocodingResponse: await this.getGeocodingResponse(requestId),
     };
     this.logger.info({ msg: 'creating feedback', requestId });
-    // console.log(feedbackResponse)
     await this.send(feedbackResponse);
     return feedbackResponse;
   }
 
   public async getGeocodingResponse(requestId: string): Promise<GeocodingResponse> {
     const redisClient = this.redis;
-
-    const redisResponse = (await redisClient.get(requestId)) as string;
-    if (redisResponse) {
-      const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
-      return geocodingResponse;
+    try {
+      const redisResponse = (await redisClient.get(requestId)) as string;
+      if (redisResponse) {
+        const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+        return geocodingResponse;
+      }
+    } catch (error) {
+      this.logger.error(`Redis Error: ${(error as Error).message}`);
+      throw error;
     }
     throw new NotFoundError('the current request was not found');
   }

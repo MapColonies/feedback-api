@@ -12,7 +12,7 @@
     }
   },
   "server": {
-    "port": "8001",
+    "port": "8080",
     "request": {
       "payload": {
         "limit": "1mb"
@@ -26,7 +26,7 @@
     }
   },
   "redis": {
-    "host": "localhost",
+    "host": "REDIS_HOST",
     "port": 6379,
     "username": "",
     "password": "",
@@ -39,7 +39,7 @@
     "database": 0
   },
   "kafka": {
-    "brokers": "localhost:9092"
+    "brokers": "KAFKA_URL:9092"
   },
   "kafkaConsumer": {},
   "kafkaProducer": {},
