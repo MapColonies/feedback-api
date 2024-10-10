@@ -1,0 +1,85 @@
+{
+  "openapiConfig": {
+    "filePath": "OPENAPI_FILE_PATH"
+  },
+  "telemetry": {
+    "serviceName": "TELEMETRY_SERVICE_NAME",
+    "hostname": "TELEMETRY_HOST_NAME",
+    "version": "TELEMETRY_SERVICE_VERSION",
+    "logger": {
+      "level": "LOG_LEVEL",
+      "prettyPrint": {
+        "__name": "LOG_PRETTY_PRINT_ENABLED",
+        "__format": "boolean"
+      }
+    },
+    "tracing": {
+      "enabled": "TELEMETRY_TRACING_ENABLED",
+      "url": "TELEMETRY_TRACING_URL"
+    },
+    "metrics": {
+      "enabled": "TELEMETRY_METRICS_ENABLED",
+      "url": "TELEMETRY_METRICS_URL",
+      "interval": "TELEMETRY_METRICS_INTERVAL"
+    }
+  },
+  "server": {
+    "port": "SERVER_PORT",
+    "request": {
+      "payload": {
+        "limit": "REQUEST_PAYLOAD_LIMIT"
+      }
+    },
+    "response": {
+      "compression": {
+        "enabled": {
+          "__name": "RESPONSE_COMPRESSION_ENABLED",
+          "__format": "boolean"
+        }
+      }
+    }
+  },
+  "redis": {
+    "host": "REDIS_HOST",
+    "port": {
+      "__name": "REDIS_PORT",
+      "__format": "number"
+    },
+    "username": "REDIS_USERNAME",
+    "password": "REDIS_PASSWORD",
+    "enableSslAuth": {
+      "__name": "REDIS_ENABLE_SSL_AUTH",
+      "__format": "boolean"
+    },
+    "sslPaths": {
+      "ca": "REDIS_CA_PATH",
+      "key": "REDIS_KEY_PATH",
+      "cert": "REDIS_CERT_PATH"
+    },
+    "database": {
+      "__name": "REDIS_DATABASE",
+      "__format": "number"
+    }
+  },
+  "kafka": {
+    "brokers": "KAFKA_BROKERS",
+    "clientId": "KAFKA_CLIENT_ID",
+    "sasl": {
+      "mechanism": "KAFKA_SASL_MECHANISM",
+      "plain": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      },
+      "scram-sha-256": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      },
+      "scram-sha-512": {
+        "username": "KAFKA_USERNAME",
+        "password": "KAFKA_PASSWORD"
+      }
+    }
+  },
+  "kafkaProducer": {},
+  "outputTopic": "KAFKA_OUTPUT_TOPIC"
+}
