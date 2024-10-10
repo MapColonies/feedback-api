@@ -6,6 +6,7 @@ import { Producer } from 'kafkajs';
 import { FeedbackManager } from '../../../../src/feedback/models/feedbackManager';
 import { IFeedbackModel } from '../../../../src/feedback/models/feedback';
 import { NotFoundError } from '../../../../src/common/errors';
+import { RedisClient } from '../../../../src/redis';
 
 const mockProducer = {
   connect: jest.fn(),
@@ -28,8 +29,6 @@ jest.mock('kafkajs', () => ({
     producer: mockProducer,
   }),
 }));
-
-type RedisClient = ReturnType<typeof createClient>;
 
 describe('FeedbackManager', () => {
   let feedbackManager: FeedbackManager;
