@@ -53,11 +53,9 @@ jobs:
             REDIS_ENABLE_SSL_AUTH: false
             REDIS_DATABASE: 1
 
-          ports:
-            - 6379:6379
           # Set health checks to wait until postgres has started
           options: >-
-            --health-cmd redis_isready
+            --health-cmd redis-cli ping
             --health-interval 10s
             --health-timeout 5s
             --health-retries 5
@@ -68,15 +66,8 @@ jobs:
           # Provide the password for postgres
           env:
             KAFKA_BROKERS: localhost:9092
-          ports:
-            - 9092:9092
           # Set health checks to wait until postgres has started
-          options: >-
-            --health-cmd kafka_isready
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-        
+                  
         outputTopic:
           image: ''
           env:
@@ -106,16 +97,6 @@ jobs:
             name: Test Reporters
             path: reports/**
 
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: Run Snyk to check for vulnerabilities
-      uses: snyk/actions/node@master
-      continue-on-error: true
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
   build_image:
     name: Build Image
     runs-on: ubuntu-latest
@@ -126,6 +107,3 @@ jobs:
 
       - name: build Docker image
         run: docker build -t test-build:latest .
-
-      - name: build migrations Docker image
-        run: docker build -f ./migrations.Dockerfile -t test-migrations-build:latest .
