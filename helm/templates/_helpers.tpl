@@ -1,9 +1,9 @@
 {{/*
 Common labels
 */}}
-{{- define "ts-server-boilerplate.labels" -}}
-helm.sh/chart: {{ include "ts-server-boilerplate.chart" . }}
-{{ include "ts-server-boilerplate.selectorLabels" . }}
+{{- define "feedback-api.labels" -}}
+helm.sh/chart: {{ include "feedback-api.chart" . }}
+{{ include "feedback-api.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -13,22 +13,22 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Returns the tag of the chart.
 */}}
-{{- define "ts-server-boilerplate.tag" -}}
+{{- define "feedback-api.tag" -}}
 {{- default (printf "v%s" .Chart.AppVersion) .Values.image.tag }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
-{{- define "ts-server-boilerplate.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "ts-server-boilerplate.name" . }}
+{{- define "feedback-api.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "feedback-api.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Returns the environment from global if exists or from the chart's values, defaults to development
 */}}
-{{- define "ts-server-boilerplate.environment" -}}
+{{- define "feedback-api.environment" -}}
 {{- if .Values.global.environment }}
     {{- .Values.global.environment -}}
 {{- else -}}
@@ -39,7 +39,7 @@ Returns the environment from global if exists or from the chart's values, defaul
 {{/*
 Returns the tracing url from global if exists or from the chart's values
 */}}
-{{- define "ts-server-boilerplate.tracingUrl" -}}
+{{- define "feedback-api.tracingUrl" -}}
 {{- if .Values.global.tracing.url }}
     {{- .Values.global.tracing.url -}}
 {{- else if .Values.env.tracing.url -}}
@@ -50,7 +50,7 @@ Returns the tracing url from global if exists or from the chart's values
 {{/*
 Returns the tracing url from global if exists or from the chart's values
 */}}
-{{- define "ts-server-boilerplate.metricsUrl" -}}
+{{- define "feedback-api.metricsUrl" -}}
 {{- if .Values.global.metrics.url }}
     {{- .Values.global.metrics.url -}}
 {{- else -}}
@@ -61,7 +61,7 @@ Returns the tracing url from global if exists or from the chart's values
 {{/*
 Return the proper image name
 */}}
-{{- define "ts-server-boilerplate.image" -}}
+{{- define "feedback-api.image" -}}
 {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
 {{- end -}}
 
@@ -69,21 +69,21 @@ Return the proper image name
 {{/*
 Return the proper Docker Image Registry Secret Names
 */}}
-{{- define "ts-server-boilerplate.imagePullSecrets" -}}
+{{- define "feedback-api.imagePullSecrets" -}}
 {{ include "common.images.renderPullSecrets" (dict "images" (list .Values.image) "context" $) }}
 {{- end -}}
 
 {{/*
 Return the proper image pullPolicy
 */}}
-{{- define "ts-server-boilerplate.pullPolicy" -}}
+{{- define "feedback-api.pullPolicy" -}}
 {{ include "common.images.pullPolicy" (dict "imageRoot" .Values.image "global" .Values.global) }}
 {{- end -}}
 
 {{/*
 Return the proper image deploymentFlavor
 */}}
-{{- define "ts-server-boilerplate.deploymentFlavor" -}}
+{{- define "feedback-api.deploymentFlavor" -}}
 {{ include "common.images.deploymentFlavor" (dict "imageRoot" .Values.image "global" .Values.global) }}
 {{- end -}}
 
@@ -91,20 +91,20 @@ Return the proper image deploymentFlavor
 {{/*
 Return the proper fully qualified app name
 */}}
-{{- define "ts-server-boilerplate.fullname" -}}
+{{- define "feedback-api.fullname" -}}
 {{ include "common.names.fullname" . }}
 {{- end -}}
 
 {{/*
 Return the proper chart name
 */}}
-{{- define "ts-server-boilerplate.name" -}}
+{{- define "feedback-api.name" -}}
 {{ include "common.names.name" . }}
 {{- end -}}
 
 {{/*
 Return the proper chart name
 */}}
-{{- define "ts-server-boilerplate.chart" -}}
+{{- define "feedback-api.chart" -}}
 {{ include "common.names.chart" . }}
 {{- end -}}

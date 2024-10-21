@@ -1,5 +1,5 @@
 {{- $releaseName := .Release.Name -}}
-{{- $chartName := include "ts-server-boilerplate.name" . -}}
+{{- $chartName := include "feedback-api.name" . -}}
 {{- if and (.Values.enabled) (.Values.ingress.enabled) -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -27,7 +27,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: {{ printf "%s-service" (include "ts-server-boilerplate.fullname" .) }}
+            name: {{ printf "%s-service" (include "feedback-api.fullname" .) }}
             port:
               number: {{ .Values.env.port }}
     host: {{ .Values.ingress.host | quote }}

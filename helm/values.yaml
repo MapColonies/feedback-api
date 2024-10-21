@@ -52,7 +52,7 @@ caKey: 'ca.crt'
 
 image:
   registry: ""
-  repository: ts-server-boilerplate
+  repository: feedback-api
   tag: 'v4.2.0'
   digest: ""
   pullSecrets: []
