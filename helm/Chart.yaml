@@ -1,0 +1,11 @@
+apiVersion: v2
+name: feedback-api
+description: A Helm chart for feedback-api service
+type: application
+version: 0.1.0
+appVersion: 0.1.0
+
+dependencies:
+- name: common
+  repository: oci://acrarolibotnonprod.azurecr.io/helm
+  version: 1.0.1
