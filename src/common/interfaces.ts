@@ -22,6 +22,7 @@ export type RedisConfig = {
 export interface FeedbackResponse {
   requestId: string;
   chosenResultId: number;
+  userId: string;
   responseTime: Date; // from FeedbackApi
   geocodingResponse: GeocodingResponse;
 }

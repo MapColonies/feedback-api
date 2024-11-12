@@ -46,6 +46,7 @@ describe('feedback', function () {
       const feedbackModel: IFeedbackModel = {
         request_id: redisKey,
         chosen_result_id: 3,
+        user_id: 'user1',
       };
       const response = await requestSender.createFeedback(feedbackModel);
 
@@ -59,6 +60,7 @@ describe('feedback', function () {
       const feedbackModel: any = {
         request_id: '4ca82def-e73f-4b57-989b-3e285034b971',
         chosen_result_id: '1',
+        user_id: 'user1',
       };
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await requestSender.createFeedback(feedbackModel);
@@ -72,6 +74,7 @@ describe('feedback', function () {
       const feedbackModel: IFeedbackModel = {
         request_id: '4ca82def-e73f-4b57-989b-3e285034b971',
         chosen_result_id: 1,
+        user_id: 'user1',
       };
       const response = await requestSender.createFeedback(feedbackModel);
 

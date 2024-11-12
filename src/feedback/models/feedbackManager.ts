@@ -21,6 +21,7 @@ export class FeedbackManager {
     const feedbackResponse: FeedbackResponse = {
       requestId: requestId,
       chosenResultId: feedback.chosen_result_id,
+      userId: feedback.user_id,
       responseTime: new Date(),
       geocodingResponse: await this.getGeocodingResponse(requestId),
     };
