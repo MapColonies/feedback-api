@@ -80,7 +80,7 @@ describe('FeedbackManager', () => {
     });
 
     it('should not be able to upload feedback to kafka because redis is unavailable', async function () {
-      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, , user_id: 'user1' };
+      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
       (mockedRedis.get as jest.Mock).mockRejectedValue(new Error('Redis error'));
 
       const feedback = feedbackManager.createFeedback(feedbackRequest);
