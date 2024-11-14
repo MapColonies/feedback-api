@@ -39,7 +39,7 @@ export class FeedbackManager {
         return geocodingResponse;
       }
     } catch (error) {
-      this.logger.error(`Redis Error: ${(error as Error).message}`);
+      this.logger.error({ msg: `Redis Error: ${(error as Error).message}` });
       throw error;
     }
     throw new NotFoundError('the current request was not found');
@@ -60,7 +60,7 @@ export class FeedbackManager {
       });
       this.logger.info(`Kafka message sent. Topic: ${topic}`);
     } catch (error) {
-      this.logger.error(`Error uploading response to kafka`);
+      this.logger.error({ msg: `Error uploading response to kafka` });
       throw error;
     }
   }

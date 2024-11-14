@@ -54,8 +54,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         try {
           await kafkaProducer.connect();
           logger.info('Connected to Kafka');
-        } catch (err) {
-          logger.error('Failed to connect to Kafka', err);
+        } catch (error) {
+          logger.error({ msg: 'Failed to connect to Kafka', err: error });
         }
       },
     },
