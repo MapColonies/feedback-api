@@ -18,24 +18,26 @@ export class FeedbackManager {
 
   public async createFeedback(feedback: IFeedbackModel): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
+    const userId = feedback.user_id;
     const feedbackResponse: FeedbackResponse = {
       requestId: requestId,
       chosenResultId: feedback.chosen_result_id,
-      userId: feedback.user_id,
+      userId: userId,
       responseTime: new Date(),
-      geocodingResponse: await this.getGeocodingResponse(requestId),
+      geocodingResponse: await this.getGeocodingResponse(requestId, userId),
     };
     this.logger.info({ msg: 'creating feedback', requestId });
     await this.send(feedbackResponse);
     return feedbackResponse;
   }
 
-  public async getGeocodingResponse(requestId: string): Promise<GeocodingResponse> {
+  public async getGeocodingResponse(requestId: string, userId: string): Promise<GeocodingResponse> {
     const redisClient = this.redis;
     try {
       const redisResponse = (await redisClient.get(requestId)) as string;
       if (redisResponse) {
         const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+        geocodingResponse.userId = userId;
         return geocodingResponse;
       }
     } catch (error) {
