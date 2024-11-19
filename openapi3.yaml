@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: feedback api
   description: Api to eventually do BI on the data from responses from Geocoding.
-  version: 1.0.0
+  version: 0.1.1
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -19,21 +19,20 @@ paths:
             schema:
               $ref: '#/components/schemas/feedback'
       responses:
-        204:
+        '204':
           description: Feedback has been sent successfully
-        400:
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
-        404:
+        '404':
           description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error'
-
 components:
   schemas:
     error:
