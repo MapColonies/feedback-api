@@ -68,7 +68,7 @@
       "__name": "KAFKA_ENABLE_SSL_AUTH",
       "__format": "boolean"
     },
-    "ssl": {
+    "sslPaths": {
       "ca": "KAFKA_CA_PATH",
       "key": "KAFKA_KEY_PATH",
       "cert": "KAFKA_CERT_PATH"

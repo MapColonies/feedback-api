@@ -13,16 +13,13 @@ export const kafkaClientFactory: FactoryFunction<Producer> = (container: Depende
     kafkaConfig = {
       ...kafkaConfig,
       brokers: kafkaConfig.brokers.split(','),
-    };
-  }
-  if (kafkaConfig.enableSslAuth) {
-    kafkaConfig = {
-      ...kafkaConfig,
-      ssl: {
-        key: readFileSync(kafkaConfig.sslPaths.key, 'utf-8'),
-        cert: readFileSync(kafkaConfig.sslPaths.cert, 'utf-8'),
-        ca: [readFileSync(kafkaConfig.sslPaths.ca, 'utf-8')],
-      },
+      ssl: kafkaConfig.enableSslAuth
+        ? {
+            key: readFileSync(kafkaConfig.sslPaths.key, 'utf-8'),
+            cert: readFileSync(kafkaConfig.sslPaths.cert, 'utf-8'),
+            ca: [readFileSync(kafkaConfig.sslPaths.ca, 'utf-8')],
+          }
+        : undefined,
     };
   }
   const producerConfig = config.get<ProducerConfig>('kafkaProducer');
