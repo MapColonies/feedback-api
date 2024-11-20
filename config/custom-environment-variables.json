@@ -64,20 +64,14 @@
   "kafka": {
     "brokers": "KAFKA_BROKERS",
     "clientId": "KAFKA_CLIENT_ID",
-    "sasl": {
-      "mechanism": "KAFKA_SASL_MECHANISM",
-      "plain": {
-        "username": "KAFKA_USERNAME",
-        "password": "KAFKA_PASSWORD"
-      },
-      "scram-sha-256": {
-        "username": "KAFKA_USERNAME",
-        "password": "KAFKA_PASSWORD"
-      },
-      "scram-sha-512": {
-        "username": "KAFKA_USERNAME",
-        "password": "KAFKA_PASSWORD"
-      }
+    "enableSslAuth": {
+      "__name": "KAFKA_ENABLE_SSL_AUTH",
+      "__format": "boolean"
+    },
+    "ssl": {
+      "ca": "KAFKA_CA_PATH",
+      "key": "KAFKA_KEY_PATH",
+      "cert": "KAFKA_CERT_PATH"
     }
   },
   "kafkaProducer": {},

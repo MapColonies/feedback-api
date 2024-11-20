@@ -1,3 +1,4 @@
+import { BrokersFunction, KafkaConfig } from 'kafkajs';
 import { RedisClientOptions } from 'redis';
 
 export interface IConfig {
@@ -18,6 +19,12 @@ export type RedisConfig = {
   enableSslAuth: boolean;
   sslPaths: { ca: string; cert: string; key: string };
 } & RedisClientOptions;
+
+export type KafkaOptions = {
+  brokers: string[] | BrokersFunction;
+  enableSslAuth: boolean;
+  sslPaths: { ca: string; cert: string; key: string };
+} & KafkaConfig;
 
 export interface FeedbackResponse {
   requestId: string;
