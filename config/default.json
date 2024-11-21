@@ -49,5 +49,8 @@
   },
   "kafkaConsumer": {},
   "kafkaProducer": {},
-  "outputTopic": "topic"
+  "outputTopic": "topic",
+  "application": {
+    "userValidation": "@mycompany.net"
+  }
 }

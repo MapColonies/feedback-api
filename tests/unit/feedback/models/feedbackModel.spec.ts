@@ -5,7 +5,7 @@ import { createClient } from 'redis';
 import { Producer } from 'kafkajs';
 import { FeedbackManager } from '../../../../src/feedback/models/feedbackManager';
 import { IFeedbackModel } from '../../../../src/feedback/models/feedback';
-import { NotFoundError } from '../../../../src/common/errors';
+import { BadRequestError, NotFoundError } from '../../../../src/common/errors';
 import { RedisClient } from '../../../../src/redis';
 
 const mockProducer = {
@@ -47,7 +47,7 @@ describe('FeedbackManager', () => {
     it('should create feedback without errors', async function () {
       const requestId = '417a4635-0c59-4b5c-877c-45b4bbaaac7a';
       const chosenResultId = 3;
-      const userId = 'user1';
+      const userId = 'user1@mycompany.net';
 
       const feedbackRequest: IFeedbackModel = { request_id: requestId, chosen_result_id: chosenResultId, user_id: userId };
       (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
@@ -62,15 +62,30 @@ describe('FeedbackManager', () => {
       expect(mockedRedis.get).toHaveBeenCalledTimes(1);
     });
 
-    it('should not create feedback when request_id is not found', async function () {
+    it('should not create feedback when user_id is not valid', async function () {
       const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
+      const feedback = feedbackManager.createFeedback(feedbackRequest);
+
+      await expect(feedback).rejects.toThrow(BadRequestError);
+    });
+
+    it('should not create feedback when request_id is not found', async function () {
+      const feedbackRequest: IFeedbackModel = {
+        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        chosen_result_id: 3,
+        user_id: 'user1@mycompany.net',
+      };
       const feedback = feedbackManager.createFeedback(feedbackRequest);
 
       await expect(feedback).rejects.toThrow(NotFoundError);
     });
 
     it('should not be able to upload feedback to kafka', async function () {
-      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
+      const feedbackRequest: IFeedbackModel = {
+        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        chosen_result_id: 3,
+        user_id: 'user1@mycompany.net',
+      };
       (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
       mockProducer.send.mockRejectedValue(new Error('Kafka error'));
 
@@ -80,7 +95,11 @@ describe('FeedbackManager', () => {
     });
 
     it('should not be able to upload feedback to kafka because redis is unavailable', async function () {
-      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
+      const feedbackRequest: IFeedbackModel = {
+        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        chosen_result_id: 3,
+        user_id: 'user1@mycompany.net',
+      };
       (mockedRedis.get as jest.Mock).mockRejectedValue(new Error('Redis error'));
 
       const feedback = feedbackManager.createFeedback(feedbackRequest);

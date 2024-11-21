@@ -16,3 +16,11 @@ export class NotFoundError extends Error implements HttpError {
     super(message);
   }
 }
+
+export class BadRequestError extends Error implements HttpError {
+  public readonly status = httpStatus.BAD_REQUEST;
+
+  public constructor(message: string) {
+    super(message);
+  }
+}
