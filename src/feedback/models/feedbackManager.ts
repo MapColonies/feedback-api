@@ -4,7 +4,7 @@ import { Producer } from 'kafkajs';
 import { SERVICES } from '../../common/constants';
 import { FeedbackResponse, GeocodingResponse, IConfig } from '../../common/interfaces';
 import { RedisClient } from '../../redis';
-import { NotFoundError } from '../../common/errors';
+import { NotFoundError, BadRequestError } from '../../common/errors';
 import { IFeedbackModel } from './feedback';
 
 @injectable()
@@ -19,6 +19,12 @@ export class FeedbackManager {
   public async createFeedback(feedback: IFeedbackModel): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
+    const userValidation = this.config.get<string>('application.userValidation');
+
+    if (!userId.endsWith(userValidation)) {
+      throw new BadRequestError(`user_id not valid. valid user_id ends with "${userValidation}"`);
+    }
+
     const feedbackResponse: FeedbackResponse = {
       requestId: requestId,
       chosenResultId: feedback.chosen_result_id,
@@ -44,7 +50,7 @@ export class FeedbackManager {
       this.logger.error({ msg: `Redis Error: ${(error as Error).message}` });
       throw error;
     }
-    throw new NotFoundError('the current request was not found');
+    throw new NotFoundError('The current request was not found');
   }
 
   public async send(message: FeedbackResponse): Promise<void> {

@@ -75,5 +75,8 @@
     }
   },
   "kafkaProducer": {},
-  "outputTopic": "KAFKA_OUTPUT_TOPIC"
+  "outputTopic": "KAFKA_OUTPUT_TOPIC",
+  "application": {
+    "userValidation": "USER_ID_DOMAIN"
+  }
 }
