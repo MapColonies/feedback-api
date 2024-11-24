@@ -77,6 +77,6 @@
   "kafkaProducer": {},
   "outputTopic": "KAFKA_OUTPUT_TOPIC",
   "application": {
-    "userValidation": "USER_ID_ENDING"
+    "userValidation": "USER_ID_DOMAIN"
   }
 }
