@@ -8,7 +8,7 @@ import { IFeedbackModel } from '../models/feedback';
 import { FeedbackManager } from '../models/feedbackManager';
 import { FeedbackResponse } from '../../common/interfaces';
 
-type CreateFeedbackHandler = RequestHandler<undefined, FeedbackResponse, IFeedbackModel>;
+export type CreateFeedbackHandler = RequestHandler<undefined, FeedbackResponse, IFeedbackModel>;
 
 @injectable()
 export class FeedbackController {
@@ -24,7 +24,8 @@ export class FeedbackController {
 
   public createFeedback: CreateFeedbackHandler = async (req, res, next) => {
     try {
-      const createdFeedback = this.manager.createFeedback(req.body);
+      const apiKey = (req.headers['x-api-key'] as string | undefined) ?? (req.query.token as string);
+      const createdFeedback = this.manager.createFeedback(req.body, apiKey);
       this.createdFeedbackCounter.add(1);
       return res.status(httpStatus.NO_CONTENT).json(await createdFeedback);
     } catch (error) {

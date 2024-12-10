@@ -52,7 +52,7 @@ describe('FeedbackManager', () => {
       const feedbackRequest: IFeedbackModel = { request_id: requestId, chosen_result_id: chosenResultId, user_id: userId };
       (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
 
-      const feedback = await feedbackManager.createFeedback(feedbackRequest);
+      const feedback = await feedbackManager.createFeedback(feedbackRequest, 'token');
 
       // expectation
       expect(feedback.requestId).toBe(requestId);
@@ -64,7 +64,7 @@ describe('FeedbackManager', () => {
 
     it('should not create feedback when user_id is not valid', async function () {
       const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
-      const feedback = feedbackManager.createFeedback(feedbackRequest);
+      const feedback = feedbackManager.createFeedback(feedbackRequest, 'token');
 
       await expect(feedback).rejects.toThrow(BadRequestError);
     });
@@ -75,7 +75,7 @@ describe('FeedbackManager', () => {
         chosen_result_id: 3,
         user_id: 'user1@mycompany.net',
       };
-      const feedback = feedbackManager.createFeedback(feedbackRequest);
+      const feedback = feedbackManager.createFeedback(feedbackRequest, 'token');
 
       await expect(feedback).rejects.toThrow(NotFoundError);
     });
@@ -89,7 +89,7 @@ describe('FeedbackManager', () => {
       (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
       mockProducer.send.mockRejectedValue(new Error('Kafka error'));
 
-      const feedback = feedbackManager.createFeedback(feedbackRequest);
+      const feedback = feedbackManager.createFeedback(feedbackRequest, 'token');
 
       await expect(feedback).rejects.toThrow(new Error('Kafka error'));
     });
@@ -102,7 +102,7 @@ describe('FeedbackManager', () => {
       };
       (mockedRedis.get as jest.Mock).mockRejectedValue(new Error('Redis error'));
 
-      const feedback = feedbackManager.createFeedback(feedbackRequest);
+      const feedback = feedbackManager.createFeedback(feedbackRequest, 'token');
 
       await expect(feedback).rejects.toThrow(new Error('Redis error'));
     });
