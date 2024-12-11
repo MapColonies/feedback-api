@@ -13,6 +13,9 @@ paths:
       tags:
         - feedback
       summary: creates a new record of a chosen result from Geocoding
+      parameters:
+        - $ref: '#/components/parameters/token'
+        - $ref: '#/components/parameters/xApiKey'
       requestBody:
         content:
           application/json:
@@ -22,18 +25,60 @@ paths:
         '204':
           description: Feedback has been sent successfully
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error'
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    BadRequest:
+      description: Invalid Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    Unauthorized:
+      description: Please provide a valid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    NotFound:
+      description: Resource Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    Forbidden:
+      description: Token is not valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    InternalError:
+      description: Invalid Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+  parameters:
+    xApiKey:
+      name: x-api-key
+      in: header
+      description: JWT authentication token provided by our team
+      schema:
+        type: string
+    token:
+      name: token
+      in: query
+      description: JWT authentication token provided by our team
+      schema:
+        type: string
   schemas:
     error:
       type: object
