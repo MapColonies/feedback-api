@@ -1,6 +1,6 @@
 {
   "redis": {
-    "host": "localhost",
+    "host": "redis",
     "port": 6379,
     "username": "",
     "password": "",
@@ -13,7 +13,7 @@
     "database": 1
   },
   "kafka": {
-    "brokers": "localhost:9092"
+    "brokers": "kafka:9092"
   },
   "kafkaConsumer": {},
   "kafkaProducer": {},
