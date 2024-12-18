@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import jsLogger from '@map-colonies/js-logger';
 import Redis from 'ioredis';
+import { DependencyContainer } from 'tsyringe';
+import { Producer } from 'kafkajs';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
 import { getApp } from '../../../src/app';
@@ -12,6 +14,7 @@ import { FeedbackRequestSender } from './helpers/requestSender';
 describe('feedback', function () {
   let requestSender: FeedbackRequestSender;
   let redisConnection: Redis;
+  let depContainer: DependencyContainer;
 
   beforeAll(async function () {
     const { app, container } = await getApp({
@@ -23,12 +26,16 @@ describe('feedback', function () {
     });
     requestSender = new FeedbackRequestSender(app);
     redisConnection = container.resolve<Redis>(SERVICES.REDIS);
+    depContainer = container;
   });
 
   afterAll(async function () {
+    redisConnection = depContainer.resolve<Redis>(SERVICES.REDIS);
     if (!['end'].includes(redisConnection.status)) {
       await redisConnection.quit();
     }
+    const kafkaProducer = depContainer.resolve<Producer>(SERVICES.KAFKA);
+    await kafkaProducer.disconnect();
   });
 
   describe('Happy Path', function () {
