@@ -49,8 +49,7 @@ jobs:
           env:
             REDIS_ENABLE_SSL_AUTH: false
             REDIS_DATABASE: 1
-            REDIS_USERNAME: ""
-            REDIS_PASSWORD: ""
+            ALLOW_EMPTY_PASSWORD: yes
           ports: 
             - 6379:6379
 
