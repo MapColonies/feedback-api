@@ -8,7 +8,7 @@ import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { HealthCheck } from '@godaddy/terminus';
-import { HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from './common/constants';
+import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
@@ -23,63 +23,75 @@ export interface RegisterOptions {
 export const registerExternalValues = async (options?: RegisterOptions): Promise<DependencyContainer> => {
   const cleanupRegistry = new CleanupRegistry();
 
-  const loggerConfig = config.get<LoggerOptions>('telemetry.logger');
-  const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+  try {
+    const loggerConfig = config.get<LoggerOptions>('telemetry.logger');
+    const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
 
-  const metrics = new Metrics();
-  metrics.start();
+    const metrics = new Metrics();
+    cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
+    metrics.start();
 
-  const tracer = trace.getTracer(SERVICE_NAME);
+    cleanupRegistry.register({ func: tracing.stop.bind(tracing), id: SERVICES.TRACER });
+    tracing.start();
+    const tracer = trace.getTracer(SERVICE_NAME);
 
-  const dependencies: InjectionObject<unknown>[] = [
-    { token: SERVICES.CONFIG, provider: { useValue: config } },
-    { token: SERVICES.LOGGER, provider: { useValue: logger } },
-    { token: SERVICES.TRACER, provider: { useValue: tracer } },
-    { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
-    { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
-    {
-      token: SERVICES.REDIS,
-      provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
-      postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-        const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
-        cleanupRegistry.register({ func: redis.disconnect.bind(redis), id: SERVICES.REDIS });
-        await redis.connect();
+    const dependencies: InjectionObject<unknown>[] = [
+      { token: SERVICES.CONFIG, provider: { useValue: config } },
+      { token: SERVICES.LOGGER, provider: { useValue: logger } },
+      { token: SERVICES.TRACER, provider: { useValue: tracer } },
+      { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
+      { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
+      {
+        token: CLEANUP_REGISTRY,
+        provider: { useValue: cleanupRegistry },
       },
-    },
-    {
-      token: SERVICES.KAFKA,
-      provider: { useFactory: kafkaClientFactory },
-      postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-        const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
-        try {
-          await kafkaProducer.connect();
-          logger.info('Connected to Kafka');
-        } catch (error) {
-          logger.error({ msg: 'Failed to connect to Kafka', err: error });
-        }
-      },
-    },
-    {
-      token: HEALTHCHECK,
-      provider: {
-        useFactory: (container): HealthCheck => {
-          const redis = container.resolve<RedisClient>(SERVICES.REDIS);
-          return healthCheckFunctionFactory(redis);
+      {
+        token: SERVICES.REDIS,
+        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
+          cleanupRegistry.register({ func: redis.disconnect.bind(redis), id: SERVICES.REDIS });
+          await redis.connect();
         },
       },
-    },
-    {
-      token: ON_SIGNAL,
-      provider: {
-        useValue: {
-          useValue: async (): Promise<void> => {
-            await Promise.all([tracing.stop(), metrics.stop()]);
+      {
+        token: SERVICES.KAFKA,
+        provider: { useFactory: kafkaClientFactory },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
+          cleanupRegistry.register({ func: kafkaProducer.disconnect.bind(kafkaProducer), id: SERVICES.KAFKA });
+          try {
+            await kafkaProducer.connect();
+            logger.info('Connected to Kafka');
+          } catch (error) {
+            logger.error({ msg: 'Failed to connect to Kafka', err: error });
+          }
+        },
+      },
+      {
+        token: HEALTHCHECK,
+        provider: {
+          useFactory: (container): HealthCheck => {
+            const redis = container.resolve<RedisClient>(SERVICES.REDIS);
+            return healthCheckFunctionFactory(redis);
           },
         },
       },
-    },
-  ];
+      {
+        token: ON_SIGNAL,
+        provider: {
+          useFactory: instancePerContainerCachingFactory((container) => {
+            const cleanupRegistry = container.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+            return cleanupRegistry.trigger.bind(cleanupRegistry);
+          }),
+        },
+      },
+    ];
 
-  const container = await registerDependencies(dependencies, options?.override, options?.useChild);
-  return container;
+    const container = await registerDependencies(dependencies, options?.override, options?.useChild);
+    return container;
+  } catch (error) {
+    await cleanupRegistry.trigger();
+    throw error;
+  }
 };
