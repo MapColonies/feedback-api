@@ -3,7 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import { Producer } from 'kafkajs';
 import { SERVICES } from '../../common/constants';
 import { FeedbackResponse, GeocodingResponse, IConfig } from '../../common/interfaces';
-import { RedisClient } from '../../redis';
+import { RedisClient, requestDict } from '../../redis';
 import { NotFoundError, BadRequestError } from '../../common/errors';
 import { IFeedbackModel } from './feedback';
 
@@ -20,6 +20,8 @@ export class FeedbackManager {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
     const userValidation = this.config.get<string>('application.userValidation');
+
+    delete requestDict[requestId];
 
     if (!userId.endsWith(userValidation)) {
       throw new BadRequestError(`user_id not valid. valid user_id ends with "${userValidation}"`);
@@ -56,16 +58,12 @@ export class FeedbackManager {
 
   public async send(message: FeedbackResponse): Promise<void> {
     const topic = this.config.get<string>('outputTopic');
-    this.logger.info(`Kafka Send message. Topic: ${topic}`);
+    this.logger.info(`Kafka send message. Topic: ${topic}`);
     try {
       await this.kafkaProducer.connect();
       await this.kafkaProducer.send({
         topic,
-        messages: [
-          {
-            value: JSON.stringify(message),
-          },
-        ],
+        messages: [{ value: JSON.stringify(message) }],
       });
       this.logger.info(`Kafka message sent. Topic: ${topic}`);
     } catch (error) {

@@ -12,7 +12,7 @@ import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './redis';
+import { healthCheckFunctionFactory, RedisClient, redisClientFactory, redisSubscribe } from './redis';
 import { kafkaClientFactory } from './kafka';
 
 export interface RegisterOptions {
@@ -28,10 +28,22 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
 
     const metrics = new Metrics();
-    cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
+    cleanupRegistry.register({
+      func: async (): Promise<void> => {
+        await metrics.stop();
+        return Promise.resolve();
+      },
+      id: SERVICES.METER,
+    });
     metrics.start();
 
-    cleanupRegistry.register({ func: tracing.stop.bind(tracing), id: SERVICES.TRACER });
+    cleanupRegistry.register({
+      func: async (): Promise<void> => {
+        await tracing.stop();
+        return Promise.resolve();
+      },
+      id: SERVICES.TRACER,
+    });
     tracing.start();
     const tracer = trace.getTracer(SERVICE_NAME);
 
@@ -46,26 +58,45 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         provider: { useValue: cleanupRegistry },
       },
       {
-        token: SERVICES.REDIS,
-        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
-        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
-          cleanupRegistry.register({ func: redis.disconnect.bind(redis), id: SERVICES.REDIS });
-          await redis.connect();
-        },
-      },
-      {
         token: SERVICES.KAFKA,
-        provider: { useFactory: kafkaClientFactory },
+        provider: { useFactory: instancePerContainerCachingFactory(kafkaClientFactory) },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
-          cleanupRegistry.register({ func: kafkaProducer.disconnect.bind(kafkaProducer), id: SERVICES.KAFKA });
+          cleanupRegistry.register({
+            func: async (): Promise<void> => {
+              await kafkaProducer.disconnect();
+              return Promise.resolve();
+            },
+            id: SERVICES.KAFKA,
+          });
           try {
             await kafkaProducer.connect();
             logger.info('Connected to Kafka');
           } catch (error) {
             logger.error({ msg: 'Failed to connect to Kafka', err: error });
           }
+        },
+      },
+      {
+        token: SERVICES.REDIS,
+        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
+          const subscriber = await redisSubscribe(deps);
+          cleanupRegistry.register({
+            func: async () => {
+              await subscriber.quit();
+              return Promise.resolve();
+            },
+          });
+          cleanupRegistry.register({
+            func: async (): Promise<void> => {
+              await redis.quit();
+              return Promise.resolve();
+            },
+            id: SERVICES.REDIS,
+          });
+          await redis.connect();
         },
       },
       {
@@ -80,10 +111,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
       {
         token: ON_SIGNAL,
         provider: {
-          useFactory: instancePerContainerCachingFactory((container) => {
-            const cleanupRegistry = container.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
-            return cleanupRegistry.trigger.bind(cleanupRegistry);
-          }),
+          useValue: cleanupRegistry.trigger.bind(cleanupRegistry),
         },
       },
     ];

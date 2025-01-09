@@ -28,7 +28,7 @@ export type KafkaOptions = {
 
 export interface FeedbackResponse {
   requestId: string;
-  chosenResultId: number;
+  chosenResultId: number | string;
   userId: string;
   responseTime: Date; // from FeedbackApi
   geocodingResponse: GeocodingResponse;
