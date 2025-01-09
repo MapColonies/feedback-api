@@ -12,8 +12,9 @@ import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, redisClientFactory, redisSubscribe } from './redis';
+import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
+import { redisSubscribe } from './redis/subscribe';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];

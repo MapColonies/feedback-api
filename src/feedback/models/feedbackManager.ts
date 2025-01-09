@@ -3,8 +3,9 @@ import { inject, injectable } from 'tsyringe';
 import { Producer } from 'kafkajs';
 import { SERVICES } from '../../common/constants';
 import { FeedbackResponse, GeocodingResponse, IConfig } from '../../common/interfaces';
-import { RedisClient, requestDict } from '../../redis';
+import { RedisClient } from '../../redis';
 import { NotFoundError, BadRequestError } from '../../common/errors';
+import { requestDict } from '../../redis/subscribe';
 import { IFeedbackModel } from './feedback';
 
 @injectable()
