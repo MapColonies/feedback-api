@@ -5,8 +5,9 @@ import { DependencyContainer } from 'tsyringe';
 import { Producer } from 'kafkajs';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
+import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { getApp } from '../../../src/app';
-import { SERVICES } from '../../../src/common/constants';
+import { CLEANUP_REGISTRY, SERVICES } from '../../../src/common/constants';
 import { IFeedbackModel } from '../../../src/feedback/models/feedback';
 import { GeocodingResponse } from '../../../src/common/interfaces';
 import { FeedbackRequestSender } from './helpers/requestSender';
@@ -30,12 +31,12 @@ describe('feedback', function () {
   });
 
   afterAll(async function () {
-    redisConnection = depContainer.resolve<Redis>(SERVICES.REDIS);
-    if (!['end'].includes(redisConnection.status)) {
-      await redisConnection.quit();
-    }
     const kafkaProducer = depContainer.resolve<Producer>(SERVICES.KAFKA);
     await kafkaProducer.disconnect();
+    const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+    await cleanupRegistry.trigger();
+    depContainer.reset();
+    await depContainer.dispose();
   });
 
   describe('Happy Path', function () {

@@ -12,6 +12,8 @@ describe('docs', function () {
       override: [
         { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
+        { token: SERVICES.REDIS, provider: { useValue: {} } },
+        { token: SERVICES.KAFKA, provider: { useValue: {} } },
       ],
       useChild: true,
     });
