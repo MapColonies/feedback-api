@@ -35,9 +35,10 @@ export interface FeedbackResponse {
 }
 
 export interface GeocodingResponse {
-  userId: string;
+  userId?: string;
   apiKey: string;
   site: string;
   response: JSON;
   respondedAt: Date; // from Geocoding
+  wasUsed?: boolean;
 }

@@ -10,7 +10,9 @@
       "key": "",
       "cert": ""
     },
-    "database": 1
+    "database": 2,
+    "additionalDB": 3,
+    "ttl": 300
   },
   "kafka": {
     "brokers": "kafka:9092"

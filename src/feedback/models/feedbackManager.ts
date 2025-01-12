@@ -5,7 +5,6 @@ import { SERVICES } from '../../common/constants';
 import { FeedbackResponse, GeocodingResponse, IConfig } from '../../common/interfaces';
 import { RedisClient } from '../../redis';
 import { NotFoundError, BadRequestError } from '../../common/errors';
-import { requestDict } from '../../redis/subscribe';
 import { IFeedbackModel } from './feedback';
 
 @injectable()
@@ -22,8 +21,6 @@ export class FeedbackManager {
     const userId = feedback.user_id;
     const userValidation = this.config.get<string>('application.userValidation');
 
-    delete requestDict[requestId];
-
     if (!userId.endsWith(userValidation)) {
       throw new BadRequestError(`user_id not valid. valid user_id ends with "${userValidation}"`);
     }
@@ -35,6 +32,8 @@ export class FeedbackManager {
       responseTime: new Date(),
       geocodingResponse: await this.getGeocodingResponse(requestId, userId, apiKey),
     };
+    await this.redis.set(requestId, JSON.stringify(feedbackResponse.geocodingResponse));
+
     this.logger.info({ msg: 'creating feedback', requestId });
     await this.send(feedbackResponse);
     return feedbackResponse;
@@ -48,6 +47,7 @@ export class FeedbackManager {
         const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
         geocodingResponse.userId = userId;
         geocodingResponse.apiKey = apiKey;
+        geocodingResponse.wasUsed = true;
         return geocodingResponse;
       }
     } catch (error) {
