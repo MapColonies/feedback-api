@@ -2,36 +2,11 @@ import { Logger } from '@map-colonies/js-logger';
 import { createClient } from 'redis';
 import { DependencyContainer } from 'tsyringe';
 import { Producer } from 'kafkajs';
-import { SERVICES } from '../common/constants';
+import { REDIS_SUB, SERVICES } from '../common/constants';
 import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfaces';
 import { NotFoundError } from '../common/errors';
 
-const sendNoChosenResult = async (requestId: string, logger: Logger, config: IConfig, kafkaProducer: Producer, redis: RedisClient): Promise<void> => {
-  const feedbackResponse: FeedbackResponse = {
-    requestId,
-    chosenResultId: '',
-    userId: '',
-    responseTime: new Date(),
-    geocodingResponse: await getNoChosenGeocodingResponse(requestId, logger, redis),
-  };
-  await send(feedbackResponse, logger, config, kafkaProducer);
-};
-
-const getNoChosenGeocodingResponse = async (requestId: string, logger: Logger, redis: RedisClient): Promise<GeocodingResponse> => {
-  try {
-    const redisResponse = await redis.get(requestId);
-    if (redisResponse != null) {
-      const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
-      return geocodingResponse;
-    }
-  } catch (error) {
-    logger.error({ msg: `Redis Error: ${(error as Error).message}` });
-    throw error;
-  }
-  throw new NotFoundError('The current request was not found');
-};
-
-const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
+export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<boolean> => {
   const topic = config.get<string>('outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
   try {
@@ -41,8 +16,9 @@ const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, 
       messages: [{ value: JSON.stringify(message) }],
     });
     logger.info(`Kafka message sent. Topic: ${topic}`);
+    return true;
   } catch (error) {
-    logger.error({ msg: `Error uploading response to kafka` });
+    logger.error({ msg: `Error uploading response to kafka`, message });
     throw error;
   }
 };
@@ -54,6 +30,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const config = deps.resolve<IConfig>(SERVICES.CONFIG);
   const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
   const logger = deps.resolve<Logger>(SERVICES.LOGGER);
+  // const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   const additionalDB = config.get<number>('redis.additionalDB');
   const originalDB = config.get<number>('redis.database');
@@ -84,4 +61,35 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
     await redis.del(message);
   });
   return subscriber;
+};
+
+export const sendNoChosenResult = async (
+  requestId: string,
+  logger: Logger,
+  config: IConfig,
+  kafkaProducer: Producer,
+  redis: RedisClient
+): Promise<void> => {
+  const feedbackResponse: FeedbackResponse = {
+    requestId,
+    chosenResultId: '',
+    userId: '',
+    responseTime: new Date(),
+    geocodingResponse: await getNoChosenGeocodingResponse(requestId, logger, redis),
+  };
+  await send(feedbackResponse, logger, config, kafkaProducer);
+};
+
+export const getNoChosenGeocodingResponse = async (requestId: string, logger: Logger, redis: RedisClient): Promise<GeocodingResponse> => {
+  try {
+    const redisResponse = await redis.get(requestId);
+    if (redisResponse != null) {
+      const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+      return geocodingResponse;
+    }
+  } catch (error) {
+    logger.error({ msg: `Redis Error: ${(error as Error).message}` });
+    throw error;
+  }
+  throw new NotFoundError('The current request was not found');
 };

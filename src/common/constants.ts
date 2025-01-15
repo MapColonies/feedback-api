@@ -20,3 +20,4 @@ export const SERVICES = {
 export const ON_SIGNAL = Symbol('onSignal');
 export const HEALTHCHECK = Symbol('healthcheck');
 export const CLEANUP_REGISTRY = Symbol('cleanupRegistry');
+export const REDIS_SUB = Symbol('redisSubClient');

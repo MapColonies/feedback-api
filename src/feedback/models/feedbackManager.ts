@@ -41,6 +41,7 @@ export class FeedbackManager {
 
   public async getGeocodingResponse(requestId: string, userId: string, apiKey: string): Promise<GeocodingResponse> {
     const redisClient = this.redis;
+    await redisClient.select(this.config.get<number>('redis.database'));
     try {
       const redisResponse = (await redisClient.get(requestId)) as string;
       if (redisResponse) {

@@ -8,7 +8,8 @@ import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { HealthCheck } from '@godaddy/terminus';
-import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from './common/constants';
+import { createClient } from 'redis';
+import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
@@ -83,13 +84,13 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
-          const subscriber = await redisSubscribe(deps);
-          cleanupRegistry.register({
-            func: async () => {
-              await subscriber.quit();
-              return Promise.resolve();
-            },
-          });
+          // const subscriber = await redisSubscribe(deps);
+          // cleanupRegistry.register({
+          //   func: async () => {
+          //     // await subscriber.quit();
+          //     return Promise.resolve();
+          //   },
+          // });
           cleanupRegistry.register({
             func: async (): Promise<void> => {
               await redis.quit();
@@ -98,6 +99,47 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
             id: SERVICES.REDIS,
           });
           await redis.connect();
+          logger.info('Connected to Redis');
+        },
+      },
+      // {
+      //   token: REDIS_SUB,
+      //   provider: {
+      //     useFactory: instancePerContainerCachingFactory((): RedisClient => {
+      //       const subscriber = createClient();
+      //       return subscriber;
+      //     }),
+      //   },
+      //   postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+      //     const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
+      //     cleanupRegistry.register({
+      //       func: async () => {
+      //         // await subscriber.disconnect();
+      //         await subscriber.quit();
+      //         return Promise.resolve();
+      //       },
+      //       id: REDIS_SUB,
+      //     });
+      //     await subscriber.connect();
+      //     logger.info('Connected to Redis Subscriber');
+      //     await redisSubscribe(deps);
+      //   },
+      // },
+      {
+        token: REDIS_SUB,
+        provider: {
+          useFactory: instancePerContainerCachingFactory(async (deps: DependencyContainer): Promise<unknown> => {
+            const subscriber = await redisSubscribe(deps);
+            cleanupRegistry.register({
+              func: async () => {
+                // await subscriber.disconnect();
+                await subscriber.quit();
+                return Promise.resolve();
+              },
+              id: REDIS_SUB,
+            });
+            return subscriber;
+          }),
         },
       },
       {
