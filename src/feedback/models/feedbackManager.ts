@@ -60,7 +60,6 @@ export class FeedbackManager {
     const topic = this.config.get<string>('outputTopic');
     this.logger.info(`Kafka send message. Topic: ${topic}`);
     try {
-      // await this.kafkaProducer.connect();
       await this.kafkaProducer.send({
         topic,
         messages: [{ value: JSON.stringify(message) }],
