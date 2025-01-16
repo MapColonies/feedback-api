@@ -104,6 +104,13 @@ jobs:
           run: |
             apt-get update
             apt-get install -y docker.io
+        
+        - name: Wait for Redis
+          run: |
+            until redis-cli ping; do
+              echo "Waiting for Redis to be ready...";
+              sleep 5;
+            done
        
         - name: Wait for Kafka
           run: |
