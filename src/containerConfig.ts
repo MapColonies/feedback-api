@@ -88,18 +88,10 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const geocodingRedis = deps.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
-          // const subscriber = await redisSubscribe(deps);
-          // cleanupRegistry.register({
-          //   func: async () => {
-          //     // await subscriber.quit();
-          //     return Promise.resolve();
-          //   },
-          // });
           deps.register<boolean>('isGeocodingRedis', { useValue: false });
           cleanupRegistry.register({
             func: async (): Promise<void> => {
               await geocodingRedis.quit();
-              // await geocodingRedis.disconnect()
               return Promise.resolve();
             },
             id: SERVICES.GEOCODING_REDIS,
@@ -116,7 +108,6 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           cleanupRegistry.register({
             func: async (): Promise<void> => {
               await ttlRedis.quit();
-              // await ttlRedis.disconnect()
               return Promise.resolve();
             },
             id: SERVICES.TTL_REDIS,
@@ -155,8 +146,6 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
           cleanupRegistry.register({
             func: async () => {
-              // await subscriber.unsubscribe();
-              // await subscriber.disconnect()
               await subscriber.quit();
               return Promise.resolve();
             },
@@ -167,23 +156,6 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           await redisSubscribe(deps);
         },
       },
-      // {
-      //   token: REDIS_SUB,
-      //   provider: {
-      //     useFactory: instancePerContainerCachingFactory(async (deps: DependencyContainer): Promise<unknown> => {
-      //       const subscriber = await redisSubscribe(deps);
-      //       cleanupRegistry.register({
-      //         func: async () => {
-      //           // await subscriber.disconnect();
-      //           await subscriber.quit();
-      //           return Promise.resolve();
-      //         },
-      //         id: REDIS_SUB,
-      //       });
-      //       return subscriber;
-      //     }),
-      //   },
-      // },
       {
         token: ON_SIGNAL,
         provider: {

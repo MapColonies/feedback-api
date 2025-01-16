@@ -5,7 +5,6 @@ export class FeedbackRequestSender {
   public constructor(private readonly app: Express.Application) {}
 
   public async createFeedback(body: IFeedbackModel): Promise<supertest.Response> {
-    // return supertest.agent(this.app).post('/feedback').set('Content-Type', 'application/json').set('x-api-key', '1').send(body);
     return supertest.agent(this.app).post('/feedback').set('Content-Type', 'application/json').send(body);
   }
 }

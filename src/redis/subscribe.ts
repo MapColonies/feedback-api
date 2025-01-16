@@ -10,7 +10,6 @@ export const send = async (message: FeedbackResponse, logger: Logger, config: IC
   const topic = config.get<string>('outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
   try {
-    // await kafkaProducer.connect();
     await kafkaProducer.send({
       topic,
       messages: [{ value: JSON.stringify(message) }],
@@ -37,20 +36,10 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const geocodingDB = config.get<number>('redis.databases.geocodingIndex');
   const redisTTL = config.get<number>('redis.ttl');
 
-  // const subscriber = createClient();
-  // await subscriber.connect();
-  // logger.info('Connected to redis subscriber');
-
   await subscriber.subscribe(`__keyevent@${geocodingDB}__:set`, async (message) => {
     logger.info(`Redis: Got new request ${message}`);
-
-    // await redis.select(additionalDB);
-
     // eslint-disable-next-line @typescript-eslint/naming-convention
     await ttlRedis.set(message, '', { EX: redisTTL });
-    // await ttlRedis.setEx(message, redisTTL, '');
-
-    // await redis.select(originalDB);
   });
 
   await subscriber.subscribe(`__keyevent@${ttlDB}__:expired`, async (message: string) => {
@@ -85,14 +74,8 @@ export const sendNoChosenResult = async (
   await send(feedbackResponse, logger, config, kafkaProducer);
 };
 
-export const getNoChosenGeocodingResponse = async (
-  requestId: string,
-  logger: Logger,
-  geocodingRedis: RedisClient,
-): Promise<GeocodingResponse> => {
-  // const originalDB = config.get<number>('redis.database');
+export const getNoChosenGeocodingResponse = async (requestId: string, logger: Logger, geocodingRedis: RedisClient): Promise<GeocodingResponse> => {
   try {
-    // await redis.select(originalDB);
     const redisResponse = await geocodingRedis.get(requestId);
     if (redisResponse != null) {
       const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
