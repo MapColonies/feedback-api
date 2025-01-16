@@ -48,10 +48,10 @@ jobs:
           # Provide the password for postgres
           env:
             REDIS_ENABLE_SSL_AUTH: false
-            ALLOW_EMPTY_PASSWORD: yes
             REDIS_GEOCODING_INDEX: 0
             REDIS_TTL_INDEX: 1
             REDIS_TTL: 2
+            ALLOW_EMPTY_PASSWORD: yes
           ports: 
             - 6379:6379
 
