@@ -7,8 +7,8 @@ import { SERVICES } from '../common/constants';
 import { RedisConfig, IConfig } from '../common/interfaces';
 import { promiseTimeout } from '../common/utils';
 
-const createConnectionOptions = (redisConfig: RedisConfig): Partial<RedisClientOptions> => {
-  const { host, port, enableSslAuth, sslPaths, ...clientOptions } = redisConfig;
+const createConnectionOptions = (redisConfig: RedisConfig, isGeocodingRedis: boolean): Partial<RedisClientOptions> => {
+  const { host, port, enableSslAuth, sslPaths, databases, ...clientOptions } = redisConfig;
   clientOptions.socket = { host, port };
   if (enableSslAuth) {
     clientOptions.socket = {
@@ -19,6 +19,11 @@ const createConnectionOptions = (redisConfig: RedisConfig): Partial<RedisClientO
       ca: sslPaths.ca !== '' ? readFileSync(sslPaths.ca) : undefined,
     };
   }
+  if (isGeocodingRedis) {
+    clientOptions.database = databases.geocodingIndex;
+  } else {
+    clientOptions.database = databases.ttlIndex;
+  }
   return clientOptions;
 };
 
@@ -28,8 +33,9 @@ export type RedisClient = ReturnType<typeof createClient>;
 export const redisClientFactory: FactoryFunction<RedisClient> = (container: DependencyContainer): RedisClient => {
   const logger = container.resolve<Logger>(SERVICES.LOGGER);
   const config = container.resolve<IConfig>(SERVICES.CONFIG);
+  const isGeocodingRedis = container.resolve<boolean>('isGeocodingRedis');
   const dbConfig = config.get<RedisConfig>('redis');
-  const connectionOptions = createConnectionOptions(dbConfig);
+  const connectionOptions = createConnectionOptions(dbConfig, isGeocodingRedis);
 
   const redisClient = createClient(connectionOptions)
     .on('error', (error: Error) => logger.error({ msg: 'redis client errored', err: error }))

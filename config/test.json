@@ -10,9 +10,11 @@
       "key": "",
       "cert": ""
     },
-    "database": 2,
-    "additionalDB": 3,
-    "ttl": 1
+    "databases": {
+      "geocodingIndex": 2,
+      "ttlIndex": 3
+    },
+    "ttl": 2
   },
   "kafka": {
     "brokers": "kafka:9092"

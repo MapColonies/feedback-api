@@ -18,6 +18,7 @@ export type RedisConfig = {
   port: number;
   enableSslAuth: boolean;
   sslPaths: { ca: string; cert: string; key: string };
+  databases: { geocodingIndex: number; ttlIndex: number };
 } & RedisClientOptions;
 
 export type KafkaOptions = {

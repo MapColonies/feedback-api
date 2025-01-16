@@ -2,7 +2,7 @@ import jsLogger from '@map-colonies/js-logger';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
 import { getApp } from '../../../src/app';
-import { SERVICES } from '../../../src/common/constants';
+import { REDIS_SUB, SERVICES } from '../../../src/common/constants';
 import { DocsRequestSender } from './helpers/docsRequestSender';
 
 describe('docs', function () {
@@ -12,7 +12,9 @@ describe('docs', function () {
       override: [
         { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
-        { token: SERVICES.REDIS, provider: { useValue: {} } },
+        { token: SERVICES.GEOCODING_REDIS, provider: { useValue: {} } },
+        { token: SERVICES.TTL_REDIS, provider: { useValue: {} } },
+        { token: REDIS_SUB, provider: { useValue: {} } },
         { token: SERVICES.KAFKA, provider: { useValue: {} } },
       ],
       useChild: true,

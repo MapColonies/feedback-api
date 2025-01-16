@@ -36,8 +36,10 @@
       "key": "",
       "cert": ""
     },
-    "database": 0,
-    "additionalDB": 1,
+    "databases": {
+      "geocodingIndex": 0,
+      "ttlIndex": 1
+    },
     "ttl": 300
   },
   "kafka": {

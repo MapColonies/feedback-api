@@ -9,7 +9,7 @@ import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { HealthCheck } from '@godaddy/terminus';
 import { createClient } from 'redis';
-import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
+import { CLEANUP_REGISTRY, GEOCODING_HEALTHCHECK, TTL_HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
@@ -80,10 +80,14 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         },
       },
       {
-        token: SERVICES.REDIS,
+        token: 'isGeocodingRedis',
+        provider: { useValue: true },
+      },
+      {
+        token: SERVICES.GEOCODING_REDIS,
         provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
+          const geocodingRedis = deps.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
           // const subscriber = await redisSubscribe(deps);
           // cleanupRegistry.register({
           //   func: async () => {
@@ -91,66 +95,95 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           //     return Promise.resolve();
           //   },
           // });
+          deps.register<boolean>('isGeocodingRedis', { useValue: false });
           cleanupRegistry.register({
             func: async (): Promise<void> => {
-              await redis.quit();
+              await geocodingRedis.quit();
+              // await geocodingRedis.disconnect()
               return Promise.resolve();
             },
-            id: SERVICES.REDIS,
+            id: SERVICES.GEOCODING_REDIS,
           });
-          await redis.connect();
-          logger.info('Connected to Redis');
+          await geocodingRedis.connect();
+          logger.info('Connected to GeocodingRedis');
+        },
+      },
+      {
+        token: SERVICES.TTL_REDIS,
+        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const ttlRedis = deps.resolve<RedisClient>(SERVICES.TTL_REDIS);
+          cleanupRegistry.register({
+            func: async (): Promise<void> => {
+              await ttlRedis.quit();
+              // await ttlRedis.disconnect()
+              return Promise.resolve();
+            },
+            id: SERVICES.TTL_REDIS,
+          });
+          await ttlRedis.connect();
+          logger.info('Connected to TTLRedis');
+        },
+      },
+      {
+        token: GEOCODING_HEALTHCHECK,
+        provider: {
+          useFactory: (container): HealthCheck => {
+            const geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
+            return healthCheckFunctionFactory(geocodingRedis);
+          },
+        },
+      },
+      {
+        token: TTL_HEALTHCHECK,
+        provider: {
+          useFactory: (container): HealthCheck => {
+            const ttlRedis = container.resolve<RedisClient>(SERVICES.TTL_REDIS);
+            return healthCheckFunctionFactory(ttlRedis);
+          },
+        },
+      },
+      {
+        token: REDIS_SUB,
+        provider: {
+          useFactory: instancePerContainerCachingFactory((): RedisClient => {
+            const subscriber = createClient();
+            return subscriber;
+          }),
+        },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
+          cleanupRegistry.register({
+            func: async () => {
+              // await subscriber.unsubscribe();
+              // await subscriber.disconnect()
+              await subscriber.quit();
+              return Promise.resolve();
+            },
+            id: REDIS_SUB,
+          });
+          await subscriber.connect();
+          logger.info('Connected to Redis Subscriber');
+          await redisSubscribe(deps);
         },
       },
       // {
       //   token: REDIS_SUB,
       //   provider: {
-      //     useFactory: instancePerContainerCachingFactory((): RedisClient => {
-      //       const subscriber = createClient();
+      //     useFactory: instancePerContainerCachingFactory(async (deps: DependencyContainer): Promise<unknown> => {
+      //       const subscriber = await redisSubscribe(deps);
+      //       cleanupRegistry.register({
+      //         func: async () => {
+      //           // await subscriber.disconnect();
+      //           await subscriber.quit();
+      //           return Promise.resolve();
+      //         },
+      //         id: REDIS_SUB,
+      //       });
       //       return subscriber;
       //     }),
       //   },
-      //   postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-      //     const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
-      //     cleanupRegistry.register({
-      //       func: async () => {
-      //         // await subscriber.disconnect();
-      //         await subscriber.quit();
-      //         return Promise.resolve();
-      //       },
-      //       id: REDIS_SUB,
-      //     });
-      //     await subscriber.connect();
-      //     logger.info('Connected to Redis Subscriber');
-      //     await redisSubscribe(deps);
-      //   },
       // },
-      {
-        token: REDIS_SUB,
-        provider: {
-          useFactory: instancePerContainerCachingFactory(async (deps: DependencyContainer): Promise<unknown> => {
-            const subscriber = await redisSubscribe(deps);
-            cleanupRegistry.register({
-              func: async () => {
-                // await subscriber.disconnect();
-                await subscriber.quit();
-                return Promise.resolve();
-              },
-              id: REDIS_SUB,
-            });
-            return subscriber;
-          }),
-        },
-      },
-      {
-        token: HEALTHCHECK,
-        provider: {
-          useFactory: (container): HealthCheck => {
-            const redis = container.resolve<RedisClient>(SERVICES.REDIS);
-            return healthCheckFunctionFactory(redis);
-          },
-        },
-      },
       {
         token: ON_SIGNAL,
         provider: {

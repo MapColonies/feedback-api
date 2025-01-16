@@ -12,12 +12,14 @@ export const SERVICES = {
   CONFIG: Symbol('Config'),
   TRACER: Symbol('Tracer'),
   METER: Symbol('Meter'),
-  REDIS: Symbol('Redis'),
+  GEOCODING_REDIS: Symbol('GeocodingRedis'),
+  TTL_REDIS: Symbol('TTLRedis'),
   KAFKA: Symbol('Kafka'),
 } satisfies Record<string, symbol>;
 /* eslint-enable @typescript-eslint/naming-convention */
 
 export const ON_SIGNAL = Symbol('onSignal');
-export const HEALTHCHECK = Symbol('healthcheck');
+export const GEOCODING_HEALTHCHECK = Symbol('geocodingHealthcheck');
+export const TTL_HEALTHCHECK = Symbol('ttlHealthcheck');
 export const CLEANUP_REGISTRY = Symbol('cleanupRegistry');
 export const REDIS_SUB = Symbol('redisSubClient');
