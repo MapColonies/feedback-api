@@ -38,8 +38,15 @@ describe('feedback', function () {
     });
     requestSender = new FeedbackRequestSender(app);
     geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
+    const ttlRedis = container.resolve<RedisClient>(SERVICES.TTL_REDIS);
     depContainer = container;
     jest.clearAllMocks();
+    if (!geocodingRedis.isOpen) {
+      await geocodingRedis.connect();
+    }
+    if (!ttlRedis.isOpen) {
+      await ttlRedis.connect();
+    }
   });
 
   afterAll(async function () {
