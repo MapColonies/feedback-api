@@ -49,11 +49,11 @@ describe('feedback', function () {
     }
   });
 
-  afterAll(async function () {
-    const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
-    await cleanupRegistry.trigger();
-    depContainer.reset();
-  });
+  // afterAll(async function () {
+  //   const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+  //   await cleanupRegistry.trigger();
+  //   depContainer.reset();
+  // });
 
   describe('Happy Path', function () {
     it('Should return 204 status code and create the feedback', async function () {
