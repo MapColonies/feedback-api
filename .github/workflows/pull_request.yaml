@@ -112,12 +112,20 @@ jobs:
         #       sleep 5;
         #     done
 
-        - name: Wait for Redis
+        # - name: Wait for Redis
+        #   run: |
+        #     until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
+        #       echo "Waiting for Redis to be ready...";
+        #       sleep 5;
+        #     done
+
+        - name: Redis set Pub-Sub config
           run: |
-            until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
-              echo "Waiting for Redis to be ready...";
-              sleep 5;
-            done
+            docker exec $(docker ps -qf "name=redis") \
+            redis-cli select 0
+            redis-cli config set notify-keyspace-events KEA
+            redis-cli select 1
+            redis-cli config set notify-keyspace-events KEA
        
         - name: Wait for Kafka
           run: |
