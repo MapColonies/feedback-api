@@ -131,7 +131,6 @@ jobs:
 
         - name: Redis set Pub-Sub config
           run: |
-            docker exec $(docker ps -qf "name=redis") redis-cli select 0
             docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA
             docker exec $(docker ps -qf "name=redis") redis-cli select 1
             docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA
