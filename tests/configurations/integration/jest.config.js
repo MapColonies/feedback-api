@@ -38,5 +38,5 @@ module.exports = {
       statements: -10,
     },
   },
-  testTimeout: 100000,
+  testTimeout: 25000,
 };
