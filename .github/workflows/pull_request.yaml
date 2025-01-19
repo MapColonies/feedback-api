@@ -112,12 +112,12 @@ jobs:
         #       sleep 5;
         #     done
 
-        # - name: Wait for Redis
-        #   run: |
-        #     until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
-        #       echo "Waiting for Redis to be ready...";
-        #       sleep 5;
-        #     done
+        - name: Wait for Redis
+          run: |
+            until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
+              echo "Waiting for Redis to be ready...";
+              sleep 5;
+            done
 
 
         # - name: Redis set Pub-Sub config
