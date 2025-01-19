@@ -30,7 +30,7 @@ describe('feedback', function () {
   beforeAll(async function () {
     const { app, container } = await getApp({
       override: [
-        { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
+        { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: true }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
         { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
       ],
