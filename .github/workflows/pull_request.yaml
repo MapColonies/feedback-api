@@ -69,6 +69,7 @@ jobs:
           image: redis
           # Provide the password for postgres
           env:
+            REDIS_HOST: redis
             REDIS_ENABLE_SSL_AUTH: false
             REDIS_GEOCODING_INDEX: 0
             REDIS_TTL_INDEX: 1
@@ -121,22 +122,10 @@ jobs:
 
         - name: Install Node.js dependencies
           run: npm ci
-
-        - name: Install Docker
-          run: |
-            apt-get update
-            apt-get install -y docker.io
         
-        # - name: Wait for Redis
-        #   run: |
-        #     until redis-cli ping; do
-        #       echo "Waiting for Redis to be ready...";
-        #       sleep 5;
-        #     done
-
         - name: Wait for Redis
           run: |
-            until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
+            until redis-cli ping; do
               echo "Waiting for Redis to be ready...";
               sleep 5;
             done
@@ -152,7 +141,39 @@ jobs:
 
         - name: Redis set Pub-Sub config
           run: |
-            docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA       
+            redis-cli config set notify-keyspace-events KEA 
+
+        - name: Install Docker
+          run: |
+            apt-get update
+            apt-get install -y docker.io
+        
+        # - name: Wait for Redis
+        #   run: |
+        #     until redis-cli ping; do
+        #       echo "Waiting for Redis to be ready...";
+        #       sleep 5;
+        #     done
+
+        # - name: Wait for Redis
+        #   run: |
+        #     until docker exec $(docker ps -qf "name=redis") redis-cli ping; do
+        #       echo "Waiting for Redis to be ready...";
+        #       sleep 5;
+        #     done
+
+
+        # - name: Redis set Pub-Sub config
+        #   run: |
+        #     docker exec $(docker ps -qf "name=redis") redis-cli select 0
+        #     redis-cli select 0
+        #     docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA
+        #     docker exec $(docker ps -qf "name=redis") redis-cli select 1
+        #     docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA
+
+        # - name: Redis set Pub-Sub config
+        #   run: |
+        #     docker exec $(docker ps -qf "name=redis") redis-cli config set notify-keyspace-events KEA       
 
         # - name: Redis set Pub-Sub config
         #   run: |
