@@ -101,25 +101,28 @@ jobs:
 
         - name: Install Node.js dependencies
           run: npm ci
-
-        - name: Install Docker
-          run: |
-            apt-get update
-            apt-get install -y docker.io
         
-        - name: Wait for Redis
-          run: |
-            until docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli ping; do
-              echo "Waiting for Redis to be ready...";
-              sleep 5;
-            done
+        - name: Inspect Redis logs1 #n/a
+          run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
+
+        # - name: Install Docker
+        #   run: |
+        #     apt-get update
+        #     apt-get install -y docker.io
+        
+        # - name: Wait for Redis
+        #   run: |
+        #     until docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli ping; do
+        #       echo "Waiting for Redis to be ready...";
+        #       sleep 5;
+        #     done
 
         - name: Create Redis PubSub
           run: |
             docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") \
             redis-cli config set notify-keyspace-events KEA
 
-        - name: Inspect Redis logs #n/a
+        - name: Inspect Redis logs2 #n/a
           run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
 
         # - name: Wait for Kafka
