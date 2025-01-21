@@ -106,7 +106,7 @@ jobs:
         - name: Check if Redis service is healthy
           run: |
             echo "Checking Redis health..."
-            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis:6.2.7" --format "{{.Names}}")
+            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
             echo "Redis container name: $redis_container_name"
             if [ -z "$redis_container_name" ]; then
               echo "Error: Redis container not found."
@@ -117,13 +117,16 @@ jobs:
         - name: Wait for Redis to be ready
           run: |
             echo "Waiting for Redis to be ready..."
-            # Use the service name 'redis' instead of the container name
-            until redis-cli -h redis ping; do
+            # Increase wait time to 30 seconds for Redis to fully initialize
+            for i in {1..6}; do
+              echo "Attempt $i to connect to Redis..."
+              if redis-cli -h redis ping; then
+                echo "Redis is ready!"
+                break
+              fi
               echo "Redis is not ready yet... retrying in 5 seconds"
               sleep 5
             done
-            echo "Redis is ready!"
-
 
         # - name: Install Docker
         #   run: |
