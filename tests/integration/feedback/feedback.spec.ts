@@ -19,7 +19,6 @@ import { FeedbackRequestSender } from './helpers/requestSender';
 const mockKafkaProducer = {
   connect: jest.fn(),
   send: jest.fn(),
-  // disconnect: jest.fn(), // n/a
 } as unknown as jest.Mocked<Producer>;
 
 describe('feedback', function () {

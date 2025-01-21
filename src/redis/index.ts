@@ -35,22 +35,10 @@ export const redisClientFactory: FactoryFunction<RedisClient> = (container: Depe
   const dbConfig = config.get<RedisConfig>('redis');
   const connectionOptions = createConnectionOptions(dbConfig, isGeocodingRedis);
 
-  logger.info(`!!!!!!!!!!!!!!${JSON.stringify(dbConfig)}`); //n/a
-
   const redisClient = createClient(connectionOptions)
     .on('error', (error: Error) => logger.error({ msg: 'redis client errored', err: error }))
     .on('reconnecting', (...args) => logger.warn({ msg: 'redis client reconnecting', ...args }))
-    // .on('end', (...args) => logger.info({ msg: 'redis client end', ...args }))
-    .on('end', () => {
-      //n/a
-      logger.warn('Redis client connection closed. Investigating potential causes...');
-      const isClientClosed = redisClient.isOpen ? false : true;
-      logger.warn({
-        msg: 'Redis client end event triggered',
-        isClientClosed,
-        stack: new Error('Redis client end trace').stack,
-      });
-    })
+    .on('end', (...args) => logger.info({ msg: 'redis client end', ...args }))
     .on('connect', (...args) => logger.debug({ msg: 'redis client connected', ...args }))
     .on('ready', (...args) => logger.debug({ msg: 'redis client is ready', ...args }));
 
