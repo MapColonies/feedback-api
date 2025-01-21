@@ -3,7 +3,7 @@ import { Producer } from 'kafkajs';
 import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
-import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
+import jsLogger, { Logger, LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
@@ -17,6 +17,8 @@ import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './r
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
 
+let logger: Logger; //n/a
+
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
   useChild?: boolean;
@@ -27,7 +29,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
   try {
     const loggerConfig = config.get<LoggerOptions>('telemetry.logger');
-    const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+    // const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+    logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() }); //n/a
 
     const metrics = new Metrics();
     cleanupRegistry.register({
@@ -168,6 +171,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     return container;
   } catch (error) {
     await cleanupRegistry.trigger();
+    logger.info(`!!!!!!!!CLEANUP WAS TRIGGERED`) //n/a
+    logger.error(error) //n/a
     throw error;
   }
 };
