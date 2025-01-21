@@ -104,11 +104,19 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y redis-tools
 
+        - name: Get Redis container ID
+          id: redis-id
+          run: |
+            echo "Getting Redis container ID..."
+            container_id=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.ID}}")
+            echo "Redis container ID: $container_id"
+            echo "container_id=$container_id" >> $GITHUB_ENV
+
         - name: Ensure Redis container health
           run: |
             echo "Checking Redis container health..."
-            docker inspect --format '{{.State.Health.Status}}' redis
-            docker logs redis
+            docker inspect --format '{{.State.Health.Status}}' ${{ env.container_id }}
+            docker logs ${{ env.container_id }}
 
         - name: Wait for Redis to be ready
           run: |
@@ -124,6 +132,7 @@ jobs:
               echo "Redis is not ready yet... retrying in 5 seconds"
               sleep 5
             done
+
         # - name: Install Docker
         #   run: |
         #     apt-get update
