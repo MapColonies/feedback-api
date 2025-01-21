@@ -107,13 +107,27 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y redis-tools
 
+        - name: Install Docker
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo systemctl enable docker
+
+        - name: Check if Redis service is healthy
+          run: |
+            echo "Checking Redis health..."
+            sudo docker ps  # List all running containers
+            sudo docker inspect --format '{{.State.Health.Status}}' redis  # Check Redis health status
+
         - name: Wait for Redis to be ready
           run: |
+            echo "Waiting for Redis to be ready..."
             until redis-cli -h redis ping; do
-              echo "Waiting for Redis to be ready...";
-              sleep 5;
+              echo "Redis is not ready yet... retrying in 5 seconds"
+              sleep 5
             done
-
+            echo "Redis is ready!"
         
         # - name: Install Docker
         #   run: |
