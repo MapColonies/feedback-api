@@ -38,7 +38,7 @@ jobs:
   tests:
       name: Run Tests
       runs-on: ubuntu-latest
-      container: node:16
+      # container: node:18
 
       services:
         # Label used to access the service container
@@ -102,10 +102,10 @@ jobs:
         - name: Install Node.js dependencies
           run: npm ci
         
-        # - name: Install Docker
-        #   run: |
-        #     apt-get update
-        #     apt-get install -y docker.io
+        - name: Install Docker
+          run: |
+            apt-get update
+            apt-get install -y docker.io
 
         # - name: Inspect Redis logs1 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
@@ -124,7 +124,7 @@ jobs:
         #     redis-cli config set notify-keyspace-events KEA
 
         - name: Create Redis PubSub
-          run: docker exec redis redis-cli config set notify-keyspace-events KEA
+          run: sudo docker exec redis redis-cli config set notify-keyspace-events KEA
 
         # - name: Inspect Redis logs2 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
