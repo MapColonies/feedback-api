@@ -54,9 +54,7 @@ jobs:
             - 6379:6379
 
           # Set health checks to wait until postgres has started
-          #n/a first row!!
           options: >-
-            --sysctl vm.overcommit_memory=1
             --health-cmd "redis-cli ping || exit 1"
             --health-interval 10s
             --health-timeout 5s
