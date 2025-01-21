@@ -108,7 +108,7 @@ jobs:
           id: redis-id
           run: |
             echo "Getting Redis container ID..."
-            container_id=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.ID}}")
+            container_id=$(docker ps --filter "ancestor=bitnami/redis:6.2.7" --format "{{.ID}}")
             echo "Redis container ID: $container_id"
             echo "container_id=$container_id" >> $GITHUB_ENV
 
