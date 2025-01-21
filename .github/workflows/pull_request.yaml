@@ -106,7 +106,7 @@ jobs:
         - name: Check if Redis service is healthy
           run: |
             echo "Checking Redis health..."
-            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
+            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis:6.2.7" --format "{{.Names}}")
             echo "Redis container name: $redis_container_name"
             if [ -z "$redis_container_name" ]; then
               echo "Error: Redis container not found."
