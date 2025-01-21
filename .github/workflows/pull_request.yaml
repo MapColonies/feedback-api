@@ -43,6 +43,10 @@ jobs:
       services:
         # Label used to access the service container
         redis:
+
+            # docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout //n/a
+            # docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients //n/a
+
           # Docker Hub image
           image: bitnami/redis:6.2.7
           # Provide the password for postgres
@@ -116,12 +120,8 @@ jobs:
             redis-cli config set notify-keyspace-events KEA
 
         - name: Inspect Redis logs #n/a
-          run: |
-            docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
-            docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout
-            docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients
+          run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
 
-       
         - name: Wait for Kafka
           run: |
             until docker exec $(docker ps -qf "ancestor=bitnami/kafka:3.8.0") kafka-topics.sh --list --bootstrap-server localhost:9092; do
