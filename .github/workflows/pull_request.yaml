@@ -59,10 +59,10 @@ jobs:
 
           # Set health checks to wait until postgres has started
           options: >-
-            --health-cmd "redis-cli -h 127.0.0.1 ping|| exit 1"
+            --health-cmd "redis-cli -h 127.0.0.1 ping || exit 1"
             --health-interval 10s
             --health-timeout 5s
-            --health-retries 5
+            --health-retries 10
         
         # zookeeper:
         #     image: bitnami/zookeeper:3.8.0
