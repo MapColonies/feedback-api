@@ -47,7 +47,7 @@ jobs:
           image: bitnami/redis:6.2.7
           # Provide the password for postgres
           env:
-            REDIS_ENABLE_SSL_AUTH: false
+            # REDIS_ENABLE_SSL_AUTH: false
             # REDIS_DATABASE: 1
             ALLOW_EMPTY_PASSWORD: yes
           ports: 
@@ -113,7 +113,7 @@ jobs:
         - name: Create Redis PubSub
           run: |
             docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") \
-            redis-cli config set notify-keyspace-events kea
+            redis-cli config set notify-keyspace-events KEA
        
         - name: Wait for Kafka
           run: |

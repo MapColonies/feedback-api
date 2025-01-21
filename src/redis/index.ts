@@ -37,6 +37,8 @@ export const redisClientFactory: FactoryFunction<RedisClient> = (container: Depe
   const dbConfig = config.get<RedisConfig>('redis');
   const connectionOptions = createConnectionOptions(dbConfig, isGeocodingRedis);
 
+  logger.info(`!!!!!!!!!!!!!!${JSON.stringify(dbConfig)}`);
+
   const redisClient = createClient(connectionOptions)
     .on('error', (error: Error) => logger.error({ msg: 'redis client errored', err: error }))
     .on('reconnecting', (...args) => logger.warn({ msg: 'redis client reconnecting', ...args }))
