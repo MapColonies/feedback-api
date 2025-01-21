@@ -118,13 +118,13 @@ jobs:
         #       sleep 5;
         #     done
 
-        # - name: Create Redis PubSub
-        #   run: |
-        #     docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") \
-        #     redis-cli config set notify-keyspace-events KEA
-
         - name: Create Redis PubSub
-          run: docker exec redis redis-cli config set notify-keyspace-events KEA
+          run: |
+            docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") \
+            redis-cli config set notify-keyspace-events KEA
+
+        # - name: Create Redis PubSub
+        #   run: docker exec redis redis-cli config set notify-keyspace-events KEA
 
         # - name: Inspect Redis logs2 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
