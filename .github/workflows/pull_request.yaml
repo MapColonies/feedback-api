@@ -44,7 +44,7 @@ jobs:
         # Label used to access the service container
         redis:
           # Docker Hub image
-          image: bitnami/redis:6.2.7
+          image: redis
           # Provide the password for postgres
           env:
             # REDIS_ENABLE_SSL_AUTH: false
@@ -56,10 +56,10 @@ jobs:
 
           # Set health checks to wait until postgres has started
           options: >-
-            --health-cmd "redis-cli -h 127.0.0.1 ping || exit 1"
+            --health-cmd "redis-cli ping"
             --health-interval 10s
             --health-timeout 5s
-            --health-retries 10
+            --health-retries 5
         
         # zookeeper:
         #     image: bitnami/zookeeper:3.8.0
@@ -99,39 +99,6 @@ jobs:
         - name: Install Node.js dependencies
           run: npm ci
         
-        - name: Install redis-cli
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y redis-tools
-
-        - name: Get Redis container ID
-          id: redis-id
-          run: |
-            echo "Getting Redis container ID..."
-            container_id=$(docker ps --filter "ancestor=bitnami/redis:6.2.7" --format "{{.ID}}")
-            echo "Redis container ID: $container_id"
-            echo "container_id=$container_id" >> $GITHUB_ENV
-
-        - name: Ensure Redis container health
-          run: |
-            echo "Checking Redis container health..."
-            docker inspect --format '{{.State.Health.Status}}' ${{ env.container_id }}
-            docker logs ${{ env.container_id }}
-
-        - name: Wait for Redis to be ready
-          run: |
-            echo "Waiting for Redis to be ready..."
-            for i in {1..30}; do
-              echo "Attempt $i to connect to Redis at redis..."
-              # Give a slight delay before checking to allow DNS resolution
-              sleep 2
-              if redis-cli -h redis ping; then
-                echo "Redis is ready!"
-                break
-              fi
-              echo "Redis is not ready yet... retrying in 5 seconds"
-              sleep 5
-            done
 
         # - name: Install Docker
         #   run: |
