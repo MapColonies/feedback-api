@@ -106,20 +106,28 @@ jobs:
         - name: Check if Redis service is healthy
           run: |
             echo "Checking Redis health..."
-            docker ps  # List all running containers
             redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
             echo "Redis container name: $redis_container_name"
+            if [ -z "$redis_container_name" ]; then
+              echo "Error: Redis container not found."
+              exit 1
+            fi
             docker inspect --format '{{.State.Health.Status}}' $redis_container_name  # Check Redis health status
 
         - name: Wait for Redis to be ready
           run: |
             echo "Waiting for Redis to be ready..."
             redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
+            if [ -z "$redis_container_name" ]; then
+              echo "Error: Redis container not found."
+              exit 1
+            fi
             until redis-cli -h $redis_container_name ping; do
               echo "Redis is not ready yet... retrying in 5 seconds"
               sleep 5
             done
             echo "Redis is ready!"
+
 
         # - name: Install Docker
         #   run: |
