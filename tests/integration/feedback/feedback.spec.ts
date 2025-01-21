@@ -42,9 +42,10 @@ describe('feedback', function () {
     jest.clearAllMocks();
   });
 
-  afterAll(async function () {
-    const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
-    await cleanupRegistry.trigger();
+  // afterAll(async function () {
+  afterAll(function () {
+    // const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+    // await cleanupRegistry.trigger();
     depContainer.reset();
   });
 
