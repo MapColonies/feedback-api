@@ -117,8 +117,8 @@ jobs:
         - name: Check if Redis service is healthy
           run: |
             echo "Checking Redis health..."
-            sudo docker ps  # List all running containers
-            sudo docker inspect --format '{{.State.Health.Status}}' redis  # Check Redis health status
+            docker ps  # List all running containers
+            docker inspect --format '{{.State.Health.Status}}' redis  # Check Redis health status
 
         - name: Wait for Redis to be ready
           run: |
