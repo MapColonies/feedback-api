@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import config from 'config';
 import jsLogger, { Logger } from '@map-colonies/js-logger';
 import { DependencyContainer } from 'tsyringe';
