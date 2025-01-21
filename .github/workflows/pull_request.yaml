@@ -117,7 +117,7 @@ jobs:
 
         - name: Inspect Redis logs #n/a
           run: |
-            docker logs -T $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
+            docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
             docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout
             docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients
 
