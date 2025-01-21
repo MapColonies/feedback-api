@@ -38,7 +38,7 @@ jobs:
   tests:
       name: Run Tests
       runs-on: ubuntu-latest
-      # container: node:18
+      container: node:16
 
       services:
         # Label used to access the service container
