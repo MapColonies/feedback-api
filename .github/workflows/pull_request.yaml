@@ -114,6 +114,13 @@ jobs:
           run: |
             docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") \
             redis-cli config set notify-keyspace-events KEA
+
+        - name: Inspect Redis logs #n/a
+          run: |
+            docker logs $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
+            docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout
+            docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients
+
        
         - name: Wait for Kafka
           run: |
