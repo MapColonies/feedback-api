@@ -64,27 +64,27 @@ jobs:
             --health-timeout 5s
             --health-retries 5
         
-        zookeeper:
-            image: bitnami/zookeeper:3.8.0
-            ports:
-              - 2181:2181
-            env:
-              ALLOW_ANONYMOUS_LOGIN: yes
+        # zookeeper:
+        #     image: bitnami/zookeeper:3.8.0
+        #     ports:
+        #       - 2181:2181
+        #     env:
+        #       ALLOW_ANONYMOUS_LOGIN: yes
 
-        kafka:
-          image: bitnami/kafka:3.8.0
-          ports:
-            - 9092:9092
-          env:
-            KAFKA_BROKER_ID: 1
-            KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-            ALLOW_PLAINTEXT_LISTENER: yes
-          options: >-
-            --health-cmd "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
+        # kafka:
+        #   image: bitnami/kafka:3.8.0
+        #   ports:
+        #     - 9092:9092
+        #   env:
+        #     KAFKA_BROKER_ID: 1
+        #     KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+        #     KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+        #     ALLOW_PLAINTEXT_LISTENER: yes
+        #   options: >-
+        #     --health-cmd "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"
+        #     --health-interval 10s
+        #     --health-timeout 5s
+        #     --health-retries 5
 
       strategy:
         matrix:
@@ -110,7 +110,7 @@ jobs:
         - name: Wait for Redis
           run: |
             until docker exec $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli ping; do
-              echo "Waiting for Kafka to be ready...";
+              echo "Waiting for Redis to be ready...";
               sleep 5;
             done
 
@@ -122,17 +122,17 @@ jobs:
         - name: Inspect Redis logs #n/a
           run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
 
-        - name: Wait for Kafka
-          run: |
-            until docker exec $(docker ps -qf "ancestor=bitnami/kafka:3.8.0") kafka-topics.sh --list --bootstrap-server localhost:9092; do
-              echo "Waiting for Kafka to be ready...";
-              sleep 5;
-            done
+        # - name: Wait for Kafka
+        #   run: |
+        #     until docker exec $(docker ps -qf "ancestor=bitnami/kafka:3.8.0") kafka-topics.sh --list --bootstrap-server localhost:9092; do
+        #       echo "Waiting for Kafka to be ready...";
+        #       sleep 5;
+        #     done
 
-        - name: Create Kafka testTopic
-          run: |
-            docker exec $(docker ps -qf "ancestor=bitnami/kafka:3.8.0") \
-            kafka-topics.sh --create --topic testTopic --bootstrap-server localhost:9092
+        # - name: Create Kafka testTopic
+        #   run: |
+        #     docker exec $(docker ps -qf "ancestor=bitnami/kafka:3.8.0") \
+        #     kafka-topics.sh --create --topic testTopic --bootstrap-server localhost:9092
 
         - name: Run tests
           run: npm run test
