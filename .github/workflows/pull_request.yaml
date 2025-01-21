@@ -43,10 +43,6 @@ jobs:
       services:
         # Label used to access the service container
         redis:
-
-            # docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout //n/a
-            # docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients //n/a
-
           # Docker Hub image
           image: bitnami/redis:6.2.7
           # Provide the password for postgres
@@ -111,17 +107,20 @@ jobs:
           run: |
             echo "Checking Redis health..."
             docker ps  # List all running containers
-            docker inspect --format '{{.State.Health.Status}}' redis  # Check Redis health status
+            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
+            echo "Redis container name: $redis_container_name"
+            docker inspect --format '{{.State.Health.Status}}' $redis_container_name  # Check Redis health status
 
         - name: Wait for Redis to be ready
           run: |
             echo "Waiting for Redis to be ready..."
-            until redis-cli -h redis ping; do
+            redis_container_name=$(docker ps --filter "ancestor=bitnami/redis" --format "{{.Names}}")
+            until redis-cli -h $redis_container_name ping; do
               echo "Redis is not ready yet... retrying in 5 seconds"
               sleep 5
             done
             echo "Redis is ready!"
-        
+
         # - name: Install Docker
         #   run: |
         #     apt-get update
