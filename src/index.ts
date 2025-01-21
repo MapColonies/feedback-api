@@ -4,7 +4,7 @@ import { createTerminus } from '@godaddy/terminus';
 import { Logger } from '@map-colonies/js-logger';
 import { DependencyContainer } from 'tsyringe';
 import config from 'config';
-import { DEFAULT_SERVER_PORT, GEOCODING_HEALTHCHECK, ON_SIGNAL, SERVICES } from './common/constants';
+import { DEFAULT_SERVER_PORT, HEALTHCHECK, ON_SIGNAL, SERVICES } from './common/constants';
 import { getApp } from './app';
 
 let depContainer: DependencyContainer | undefined;
@@ -18,7 +18,7 @@ void getApp()
     const logger = container.resolve<Logger>(SERVICES.LOGGER);
     const server = createTerminus(createServer(app), {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      healthChecks: { '/liveness': container.resolve(GEOCODING_HEALTHCHECK) },
+      healthChecks: { '/liveness': container.resolve(HEALTHCHECK) },
       onSignal: container.resolve(ON_SIGNAL),
     });
 

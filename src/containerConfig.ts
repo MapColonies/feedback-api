@@ -7,15 +7,15 @@ import jsLogger, { Logger, LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
-import { HealthCheck } from '@godaddy/terminus';
 import { createClient } from 'redis';
-import { CLEANUP_REGISTRY, GEOCODING_HEALTHCHECK, TTL_HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
+import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './redis';
+import { RedisClient, redisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
+import { healthCheckFactory } from './common/utils';
 
 let logger: Logger; //n/a
 
@@ -119,24 +119,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           logger.info('Connected to TTLRedis');
         },
       },
-      {
-        token: GEOCODING_HEALTHCHECK,
-        provider: {
-          useFactory: (container): HealthCheck => {
-            const geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
-            return healthCheckFunctionFactory(geocodingRedis);
-          },
-        },
-      },
-      {
-        token: TTL_HEALTHCHECK,
-        provider: {
-          useFactory: (container): HealthCheck => {
-            const ttlRedis = container.resolve<RedisClient>(SERVICES.TTL_REDIS);
-            return healthCheckFunctionFactory(ttlRedis);
-          },
-        },
-      },
+      { token: HEALTHCHECK, provider: { useFactory: healthCheckFactory } },
       {
         token: REDIS_SUB,
         provider: {
@@ -171,8 +154,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     return container;
   } catch (error) {
     await cleanupRegistry.trigger();
-    logger.info(`!!!!!!!!CLEANUP WAS TRIGGERED`) //n/a
-    logger.error(error) //n/a
+    logger.info(`!!!!!!!!CLEANUP WAS TRIGGERED`); //n/a
+    logger.error(error); //n/a
     throw error;
   }
 };

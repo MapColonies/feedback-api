@@ -1,11 +1,9 @@
 import { readFileSync } from 'fs';
 import { Logger } from '@map-colonies/js-logger';
-import { HealthCheck } from '@godaddy/terminus';
 import { createClient, RedisClientOptions } from 'redis';
 import { DependencyContainer, FactoryFunction } from 'tsyringe';
 import { SERVICES } from '../common/constants';
 import { RedisConfig, IConfig } from '../common/interfaces';
-import { promiseTimeout } from '../common/utils';
 
 const createConnectionOptions = (redisConfig: RedisConfig, isGeocodingRedis: boolean): Partial<RedisClientOptions> => {
   const { host, port, enableSslAuth, sslPaths, databases, ...clientOptions } = redisConfig;
@@ -43,7 +41,8 @@ export const redisClientFactory: FactoryFunction<RedisClient> = (container: Depe
     .on('error', (error: Error) => logger.error({ msg: 'redis client errored', err: error }))
     .on('reconnecting', (...args) => logger.warn({ msg: 'redis client reconnecting', ...args }))
     // .on('end', (...args) => logger.info({ msg: 'redis client end', ...args }))
-    .on('end', () => { //n/a
+    .on('end', () => {
+      //n/a
       logger.warn('Redis client connection closed. Investigating potential causes...');
       const isClientClosed = redisClient.isOpen ? false : true;
       logger.warn({
@@ -56,13 +55,4 @@ export const redisClientFactory: FactoryFunction<RedisClient> = (container: Depe
     .on('ready', (...args) => logger.debug({ msg: 'redis client is ready', ...args }));
 
   return redisClient;
-};
-
-export const healthCheckFunctionFactory = (redis: RedisClient): HealthCheck => {
-  return async (): Promise<void> => {
-    const check = redis.ping().then(() => {
-      return;
-    });
-    return promiseTimeout<void>(CONNECTION_TIMEOUT, check);
-  };
 };
