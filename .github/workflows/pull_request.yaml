@@ -104,8 +104,8 @@ jobs:
         
         - name: Install Docker
           run: |
-            apt-get update
-            apt-get install -y docker.io
+            sudo apt-get update
+            sudo apt-get install -y docker.io
 
         # - name: Inspect Redis logs1 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
