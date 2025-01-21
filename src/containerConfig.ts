@@ -94,6 +94,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           deps.register<boolean>('isGeocodingRedis', { useValue: false });
           cleanupRegistry.register({
             func: async (): Promise<void> => {
+              logger.info(`!!!!!!!! geocodingRedis CLEANUP WAS TRIGGERED`) //n/a
               await geocodingRedis.quit();
               return Promise.resolve();
             },
@@ -110,6 +111,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           const ttlRedis = deps.resolve<RedisClient>(SERVICES.TTL_REDIS);
           cleanupRegistry.register({
             func: async (): Promise<void> => {
+              logger.info(`!!!!!!!! ttlRedis CLEANUP WAS TRIGGERED`) //n/a
               await ttlRedis.quit();
               return Promise.resolve();
             },
@@ -149,6 +151,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
           cleanupRegistry.register({
             func: async () => {
+              logger.info(`!!!!!!!! subscriber CLEANUP WAS TRIGGERED`) //n/a
               await subscriber.quit();
               return Promise.resolve();
             },
