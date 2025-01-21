@@ -104,8 +104,8 @@ jobs:
         
         - name: Install Docker
           run: |
-            sudo apt-get update
-            sudo apt-get install -y docker.io
+            apt-get update
+            apt-get install -y docker.io
 
         # - name: Inspect Redis logs1 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
@@ -124,7 +124,7 @@ jobs:
         #     redis-cli config set notify-keyspace-events KEA
 
         - name: Create Redis PubSub
-          run: sudo docker exec redis redis-cli config set notify-keyspace-events KEA
+          run: docker exec redis redis-cli config set notify-keyspace-events KEA
 
         # - name: Inspect Redis logs2 #n/a
         #   run: docker logs --timestamps $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
