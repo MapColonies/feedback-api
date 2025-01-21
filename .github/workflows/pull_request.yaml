@@ -107,13 +107,6 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y redis-tools
 
-        - name: Install Docker
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl start docker
-            sudo systemctl enable docker
-
         - name: Check if Redis service is healthy
           run: |
             echo "Checking Redis health..."
