@@ -54,7 +54,9 @@ jobs:
             - 6379:6379
 
           # Set health checks to wait until postgres has started
+          #n/a first row!!
           options: >-
+            --sysctl vm.overcommit_memory=1
             --health-cmd "redis-cli ping || exit 1"
             --health-interval 10s
             --health-timeout 5s
@@ -117,7 +119,7 @@ jobs:
 
         - name: Inspect Redis logs #n/a
           run: |
-            docker logs $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
+            docker logs -T $(docker ps -qf "ancestor=bitnami/redis:6.2.7")
             docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET timeout
             docker exec -it $(docker ps -qf "ancestor=bitnami/redis:6.2.7") redis-cli CONFIG GET maxclients
 
