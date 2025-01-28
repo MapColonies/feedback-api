@@ -43,7 +43,6 @@ jobs:
           image: redis:7.2.3
           env:
             ALLOW_EMPTY_PASSWORD: yes
-            REDIS_MAXCLIENTS: 100
           ports: 
             - 6379:6379
 
@@ -71,7 +70,7 @@ jobs:
 
         - name: Create Redis PubSub
           run: |
-            docker exec $(docker ps -qf "ancestor=redis:7.2.3") \
+            docker exec $(docker ps -qf "name=redis") \
             redis-cli config set notify-keyspace-events KEA
 
         - name: Run tests
