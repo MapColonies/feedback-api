@@ -1,10 +1,10 @@
 import { Logger } from '@map-colonies/js-logger';
-import { createClient } from 'redis';
 import { DependencyContainer } from 'tsyringe';
 import { Producer } from 'kafkajs';
 import { REDIS_SUB, SERVICES } from '../common/constants';
 import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfaces';
 import { NotFoundError } from '../common/errors';
+import { RedisClient } from '../redis/index';
 
 export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<boolean> => {
   const topic = config.get<string>('outputTopic');
@@ -21,8 +21,6 @@ export const send = async (message: FeedbackResponse, logger: Logger, config: IC
     throw error;
   }
 };
-
-export type RedisClient = ReturnType<typeof createClient>;
 
 export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisClient> => {
   const geocodingRedis = deps.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
@@ -66,7 +64,7 @@ export const sendNoChosenResult = async (
 ): Promise<void> => {
   const feedbackResponse: FeedbackResponse = {
     requestId,
-    chosenResultId: '',
+    chosenResultId: null,
     userId: '',
     responseTime: new Date(),
     geocodingResponse: await getNoChosenGeocodingResponse(requestId, logger, geocodingRedis),

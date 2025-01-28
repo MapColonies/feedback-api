@@ -29,7 +29,7 @@ describe('feedback', function () {
   beforeAll(async function () {
     const { app, container } = await getApp({
       override: [
-        { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: true }) } },
+        { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
         { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
       ],
@@ -38,7 +38,6 @@ describe('feedback', function () {
     requestSender = new FeedbackRequestSender(app);
     geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
     depContainer = container;
-    jest.clearAllMocks();
   });
 
   afterAll(async function () {
@@ -130,7 +129,7 @@ describe('feedback', function () {
 
     it('Should return 400 status code because user_id is not valid', async function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const feedbackModel: any = {
+      const feedbackModel: IFeedbackModel = {
         request_id: crypto.randomUUID(),
         chosen_result_id: 1,
         user_id: 'user1',
@@ -174,7 +173,7 @@ describe('feedback', function () {
 
       const feedbackResponse: FeedbackResponse = {
         requestId: crypto.randomUUID(),
-        chosenResultId: '',
+        chosenResultId: null,
         userId: '',
         responseTime: new Date(),
         geocodingResponse: {
