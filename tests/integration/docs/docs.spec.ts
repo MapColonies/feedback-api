@@ -1,14 +1,18 @@
 import jsLogger from '@map-colonies/js-logger';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
+import { DependencyContainer } from 'tsyringe';
+import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { getApp } from '../../../src/app';
-import { REDIS_SUB, SERVICES } from '../../../src/common/constants';
+import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '../../../src/common/constants';
 import { DocsRequestSender } from './helpers/docsRequestSender';
 
 describe('docs', function () {
   let requestSender: DocsRequestSender;
+  let depContainer: DependencyContainer;
+
   beforeAll(async function () {
-    const app = await getApp({
+    const { app, container } = await getApp({
       override: [
         { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
@@ -19,7 +23,14 @@ describe('docs', function () {
       ],
       useChild: true,
     });
-    requestSender = new DocsRequestSender(app.app);
+    requestSender = new DocsRequestSender(app);
+    depContainer = container;
+  });
+
+  afterAll(async function () {
+    const cleanupRegistry = depContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+    await cleanupRegistry.trigger();
+    depContainer.reset();
   });
 
   describe('Happy Path', function () {

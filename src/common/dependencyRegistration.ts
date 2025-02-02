@@ -8,6 +8,7 @@ export interface InjectionObject<T> {
   provider: Providers<T>;
   options?: RegistrationOptions;
   postInjectionHook?: (container: DependencyContainer) => Promise<void>;
+  afterAllInjectionHook?: (container: DependencyContainer) => void | Promise<void>;
 }
 
 export const registerDependencies = async (
@@ -23,5 +24,8 @@ export const registerDependencies = async (
     await injectionObj.postInjectionHook?.(container);
   }
 
+  for (const dep of dependencies) {
+    await dep.afterAllInjectionHook?.(container);
+  }
   return container;
 };

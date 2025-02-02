@@ -8,11 +8,11 @@ import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { createClient } from 'redis';
-import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
+import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { RedisClient, redisClientFactory } from './redis';
+import { RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
 import { healthCheckFactory } from './common/utils';
@@ -30,22 +30,10 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
 
     const metrics = new Metrics();
-    cleanupRegistry.register({
-      func: async (): Promise<void> => {
-        await metrics.stop();
-        return Promise.resolve();
-      },
-      id: SERVICES.METER,
-    });
+    cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
     metrics.start();
 
-    cleanupRegistry.register({
-      func: async (): Promise<void> => {
-        await tracing.stop();
-        return Promise.resolve();
-      },
-      id: SERVICES.TRACER,
-    });
+    cleanupRegistry.register({ func: tracing.stop.bind(tracing), id: SERVICES.TRACER });
     tracing.start();
     const tracer = trace.getTracer(SERVICE_NAME);
 
@@ -58,6 +46,13 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
       {
         token: CLEANUP_REGISTRY,
         provider: { useValue: cleanupRegistry },
+        afterAllInjectionHook(): void {
+          const cleanupRegistryLogger = logger.child({ subComponent: 'cleanupRegistry' });
+
+          cleanupRegistry.on('itemFailed', (id, error, msg) => cleanupRegistryLogger.error({ msg, itemId: id, err: error }));
+          cleanupRegistry.on('itemCompleted', (id) => cleanupRegistryLogger.info({ itemId: id, msg: `cleanup finished for item ${id.toString()}` }));
+          cleanupRegistry.on('finished', (status) => cleanupRegistryLogger.info({ msg: `cleanup registry finished cleanup`, status }));
+        },
       },
       {
         token: SERVICES.KAFKA,
@@ -80,40 +75,23 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         },
       },
       {
-        token: 'isGeocodingRedis',
-        provider: { useValue: true },
-      },
-      {
-        token: SERVICES.GEOCODING_REDIS,
-        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
+        token: REDIS_CLIENT_FACTORY,
+        provider: { useClass: RedisClientFactory },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const geocodingRedis = deps.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
-          deps.register<boolean>('isGeocodingRedis', { useValue: false });
-          cleanupRegistry.register({
-            func: async (): Promise<void> => {
-              await geocodingRedis.quit();
-              return Promise.resolve();
-            },
-            id: SERVICES.GEOCODING_REDIS,
-          });
-          await geocodingRedis.connect();
-          logger.info('Connected to GeocodingRedis');
-        },
-      },
-      {
-        token: SERVICES.TTL_REDIS,
-        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
-        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const ttlRedis = deps.resolve<RedisClient>(SERVICES.TTL_REDIS);
-          cleanupRegistry.register({
-            func: async (): Promise<void> => {
-              await ttlRedis.quit();
-              return Promise.resolve();
-            },
-            id: SERVICES.TTL_REDIS,
-          });
-          await ttlRedis.connect();
-          logger.info('Connected to TTLRedis');
+          const redisFactory = deps.resolve<RedisClientFactory>(REDIS_CLIENT_FACTORY);
+          for (const redisIndex of [SERVICES.GEOCODING_REDIS, SERVICES.TTL_REDIS]) {
+            const redis = redisFactory.createRedisClient(redisIndex);
+            deps.register(redisIndex, { useValue: redis });
+            cleanupRegistry.register({
+              func: async (): Promise<void> => {
+                await redis.quit();
+                return Promise.resolve();
+              },
+              id: redisIndex,
+            });
+            await redis.connect();
+            logger.info(`Connected to ${redisIndex.toString()}`);
+          }
         },
       },
       { token: HEALTHCHECK, provider: { useFactory: healthCheckFactory } },
