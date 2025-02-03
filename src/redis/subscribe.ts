@@ -6,7 +6,7 @@ import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfac
 import { NotFoundError } from '../common/errors';
 import { RedisClient } from '../redis/index';
 
-export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<boolean> => {
+export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
   const topic = config.get<string>('outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
   try {
@@ -15,7 +15,6 @@ export const send = async (message: FeedbackResponse, logger: Logger, config: IC
       messages: [{ value: JSON.stringify(message) }],
     });
     logger.info(`Kafka message sent. Topic: ${topic}`);
-    return true;
   } catch (error) {
     logger.error({ msg: `Error uploading response to kafka`, message });
     throw error;
