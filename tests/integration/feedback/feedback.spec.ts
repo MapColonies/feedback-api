@@ -115,28 +115,22 @@ describe('feedback', function () {
 
   describe('Bad Path', function () {
     it('Should return 400 status code since the chosen_result_id is a string', async function () {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const feedbackModel: any = {
+      const feedbackModel: unknown = {
         requestId: crypto.randomUUID(),
         chosen_result_id: '1',
         user_id: 'user1@mycompany.net',
       };
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const response = await requestSender.createFeedback(feedbackModel);
-
+      const response = await requestSender.createFeedback(feedbackModel as IFeedbackModel);
       expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
     });
 
     it('Should return 400 status code because user_id is not valid', async function () {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const feedbackModel: IFeedbackModel = {
         request_id: crypto.randomUUID(),
         chosen_result_id: 1,
         user_id: 'user1',
       };
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await requestSender.createFeedback(feedbackModel);
-
       expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
     });
 
