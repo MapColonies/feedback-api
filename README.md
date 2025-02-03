@@ -6,7 +6,7 @@ Geocoding's feedback API collects usage data from the [Geocoding API](https://gi
 Checkout the OpenAPI spec [here](/openapi3.yaml)
 
 ## Workflow
-![alt text](workflowImage.png)
+![workflow img](https://github.com/user-attachments/assets/7ed767ad-02dd-46f3-9de7-d2be72205e2c)
 
 ## How does it work?
 Once a Geocoding user searches for something using Geocoding's api, it enters Redis (in the geocoding DB index), and an event is triggered. This event adds the `requestId` (from geocoding) to a different Redis DB with a ttl of 5 minutes (TTL DB index).<br/><br/>
