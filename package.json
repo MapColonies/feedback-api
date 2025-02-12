@@ -1,6 +1,6 @@
 {
   "name": "feedback-api",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Feedback-api service for MapColonies",
   "main": "./src/index.ts",
   "scripts": {
