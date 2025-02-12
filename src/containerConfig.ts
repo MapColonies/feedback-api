@@ -7,13 +7,15 @@ import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
-import { HealthCheck } from '@godaddy/terminus';
-import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, SERVICES, SERVICE_NAME } from './common/constants';
+import { createClient } from 'redis';
+import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, redisClientFactory } from './redis';
+import { RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
+import { redisSubscribe } from './redis/subscribe';
+import { healthCheckFactory } from './common/utils';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -44,22 +46,26 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
       {
         token: CLEANUP_REGISTRY,
         provider: { useValue: cleanupRegistry },
-      },
-      {
-        token: SERVICES.REDIS,
-        provider: { useFactory: instancePerContainerCachingFactory(redisClientFactory) },
-        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const redis = deps.resolve<RedisClient>(SERVICES.REDIS);
-          cleanupRegistry.register({ func: redis.disconnect.bind(redis), id: SERVICES.REDIS });
-          await redis.connect();
+        afterAllInjectionHook(): void {
+          const cleanupRegistryLogger = logger.child({ subComponent: 'cleanupRegistry' });
+
+          cleanupRegistry.on('itemFailed', (id, error, msg) => cleanupRegistryLogger.error({ msg, itemId: id, err: error }));
+          cleanupRegistry.on('itemCompleted', (id) => cleanupRegistryLogger.info({ itemId: id, msg: `cleanup finished for item ${id.toString()}` }));
+          cleanupRegistry.on('finished', (status) => cleanupRegistryLogger.info({ msg: `cleanup registry finished cleanup`, status }));
         },
       },
       {
         token: SERVICES.KAFKA,
-        provider: { useFactory: kafkaClientFactory },
+        provider: { useFactory: instancePerContainerCachingFactory(kafkaClientFactory) },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
-          cleanupRegistry.register({ func: kafkaProducer.disconnect.bind(kafkaProducer), id: SERVICES.KAFKA });
+          cleanupRegistry.register({
+            func: async (): Promise<void> => {
+              await kafkaProducer.disconnect();
+              return Promise.resolve();
+            },
+            id: SERVICES.KAFKA,
+          });
           try {
             await kafkaProducer.connect();
             logger.info('Connected to Kafka');
@@ -69,21 +75,52 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         },
       },
       {
-        token: HEALTHCHECK,
+        token: REDIS_CLIENT_FACTORY,
+        provider: { useClass: RedisClientFactory },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const redisFactory = deps.resolve<RedisClientFactory>(REDIS_CLIENT_FACTORY);
+          for (const redisIndex of [SERVICES.GEOCODING_REDIS, SERVICES.TTL_REDIS]) {
+            const redis = redisFactory.createRedisClient(redisIndex);
+            deps.register(redisIndex, { useValue: redis });
+            cleanupRegistry.register({
+              func: async (): Promise<void> => {
+                await redis.quit();
+                return Promise.resolve();
+              },
+              id: redisIndex,
+            });
+            await redis.connect();
+            logger.info(`Connected to ${redisIndex.toString()}`);
+          }
+        },
+      },
+      { token: HEALTHCHECK, provider: { useFactory: healthCheckFactory } },
+      {
+        token: REDIS_SUB,
         provider: {
-          useFactory: (container): HealthCheck => {
-            const redis = container.resolve<RedisClient>(SERVICES.REDIS);
-            return healthCheckFunctionFactory(redis);
-          },
+          useFactory: instancePerContainerCachingFactory((): RedisClient => {
+            const subscriber = createClient();
+            return subscriber;
+          }),
+        },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
+          cleanupRegistry.register({
+            func: async () => {
+              await subscriber.quit();
+              return Promise.resolve();
+            },
+            id: REDIS_SUB,
+          });
+          await subscriber.connect();
+          logger.info('Connected to Redis Subscriber');
+          await redisSubscribe(deps);
         },
       },
       {
         token: ON_SIGNAL,
         provider: {
-          useFactory: instancePerContainerCachingFactory((container) => {
-            const cleanupRegistry = container.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
-            return cleanupRegistry.trigger.bind(cleanupRegistry);
-          }),
+          useValue: cleanupRegistry.trigger.bind(cleanupRegistry),
         },
       },
     ];

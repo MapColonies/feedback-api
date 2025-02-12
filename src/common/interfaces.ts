@@ -18,6 +18,7 @@ export type RedisConfig = {
   port: number;
   enableSslAuth: boolean;
   sslPaths: { ca: string; cert: string; key: string };
+  databases: { geocodingIndex: number; ttlIndex: number };
 } & RedisClientOptions;
 
 export type KafkaOptions = {
@@ -28,16 +29,17 @@ export type KafkaOptions = {
 
 export interface FeedbackResponse {
   requestId: string;
-  chosenResultId: number;
+  chosenResultId: number | null;
   userId: string;
   responseTime: Date; // from FeedbackApi
   geocodingResponse: GeocodingResponse;
 }
 
 export interface GeocodingResponse {
-  userId: string;
+  userId?: string;
   apiKey: string;
   site: string;
   response: JSON;
   respondedAt: Date; // from Geocoding
+  wasUsed?: boolean;
 }
