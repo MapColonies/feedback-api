@@ -2,6 +2,7 @@ import config from 'config';
 import { Producer } from 'kafkajs';
 import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
+import { HealthCheck } from '@godaddy/terminus';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
 import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
@@ -94,7 +95,14 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           }
         },
       },
-      { token: HEALTHCHECK, provider: { useFactory: healthCheckFactory } },
+      {
+        token: HEALTHCHECK,
+        provider: {
+          useFactory: (depContainer): HealthCheck => {
+            return healthCheckFactory(depContainer);
+          },
+        },
+      },
       {
         token: REDIS_SUB,
         provider: {
