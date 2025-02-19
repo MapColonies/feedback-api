@@ -8,14 +8,13 @@ import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
-import { createClient } from 'redis';
 import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
 import { RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
-import { redisSubscribe } from './redis/subscribe';
+import { createRedisClient, redisSubscribe } from './redis/subscribe';
 import { healthCheckFactory } from './common/utils';
 
 export interface RegisterOptions {
@@ -107,14 +106,14 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         token: REDIS_SUB,
         provider: {
           useFactory: instancePerContainerCachingFactory((): RedisClient => {
-            const subscriber = createClient();
+            const subscriber = createRedisClient(config, logger);
             return subscriber;
           }),
         },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
           cleanupRegistry.register({
-            func: async () => {
+            func: async (): Promise<void> => {
               await subscriber.quit();
               return Promise.resolve();
             },
