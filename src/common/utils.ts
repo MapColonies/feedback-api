@@ -44,7 +44,7 @@ export const healthCheckFactory = (container: DependencyContainer): HealthCheck 
     );
 
     await Promise.allSettled(promises).then((results) => {
-      results.forEach((msg) => logger.info({ msg }));
+      results.forEach((msg) => logger.debug({ msg }));
     });
 
     return Promise.resolve();
