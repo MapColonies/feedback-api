@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/MapColonies/feedback-api/compare/v0.1.6...v0.1.7) (2025-02-19)
+
+
+### Bug Fixes
+
+* liveness and redis subscriber configuration (MAPCO-6796) ([#8](https://github.com/MapColonies/feedback-api/issues/8)) ([f5aef0d](https://github.com/MapColonies/feedback-api/commit/f5aef0d3b4636eae6201f057a51f9e9146c9dae7))
+
 ### [0.1.6](https://github.com/MapColonies/feedback-api/compare/v0.1.5...v0.1.6) (2025-02-12)
 
 
