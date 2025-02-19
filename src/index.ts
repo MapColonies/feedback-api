@@ -15,11 +15,11 @@ void getApp()
   .then(({ app, container }) => {
     depContainer = container;
 
-    const logger = container.resolve<Logger>(SERVICES.LOGGER);
+    const logger = depContainer.resolve<Logger>(SERVICES.LOGGER);
     const server = createTerminus(createServer(app), {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      healthChecks: { '/liveness': container.resolve(HEALTHCHECK) },
-      onSignal: container.resolve(ON_SIGNAL),
+      healthChecks: { '/liveness': depContainer.resolve(HEALTHCHECK) },
+      onSignal: depContainer.resolve(ON_SIGNAL),
     });
 
     server.listen(port, () => {
@@ -28,12 +28,12 @@ void getApp()
   })
   .catch(async (error: Error) => {
     const errorLogger =
-      depContainer?.isRegistered(SERVICES.LOGGER) == true
+      depContainer?.isRegistered(SERVICES.LOGGER) === true
         ? depContainer.resolve<Logger>(SERVICES.LOGGER).error.bind(depContainer.resolve<Logger>(SERVICES.LOGGER))
         : console.error;
     errorLogger({ msg: '😢 - failed initializing the server', err: error });
 
-    if (depContainer?.isRegistered(ON_SIGNAL) == true) {
+    if (depContainer?.isRegistered(ON_SIGNAL) === true) {
       const shutDown: () => Promise<void> = depContainer.resolve(ON_SIGNAL);
       await shutDown();
     }

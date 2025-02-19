@@ -29,6 +29,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const logger = deps.resolve<Logger>(SERVICES.LOGGER);
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
+  logger.debug('Redis subscriber init');
   const ttlDB = config.get<number>('redis.databases.ttlIndex');
   const geocodingDB = config.get<number>('redis.databases.geocodingIndex');
   const redisTTL = config.get<number>('redis.ttl');

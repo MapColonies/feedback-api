@@ -2,17 +2,17 @@ import config from 'config';
 import { Producer } from 'kafkajs';
 import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
+import { HealthCheck } from '@godaddy/terminus';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
 import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
-import { createClient } from 'redis';
 import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { RedisClient, RedisClientFactory } from './redis';
+import { RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
 import { healthCheckFactory } from './common/utils';
@@ -79,7 +79,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         provider: { useClass: RedisClientFactory },
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const redisFactory = deps.resolve<RedisClientFactory>(REDIS_CLIENT_FACTORY);
-          for (const redisIndex of [SERVICES.GEOCODING_REDIS, SERVICES.TTL_REDIS]) {
+
+          for (const redisIndex of [SERVICES.GEOCODING_REDIS, SERVICES.TTL_REDIS, REDIS_SUB]) {
             const redis = redisFactory.createRedisClient(redisIndex);
             deps.register(redisIndex, { useValue: redis });
             cleanupRegistry.register({
@@ -90,31 +91,23 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
               id: redisIndex,
             });
             await redis.connect();
-            logger.info(`Connected to ${redisIndex.toString()}`);
+
+            let redisName = redisIndex.toString();
+            redisName = redisName.substring(redisName.indexOf('(') + 1, redisName.lastIndexOf(')'));
+            logger.info(`Connected to ${redisName}`);
+
+            if (redisIndex === REDIS_SUB) {
+              await redisSubscribe(deps);
+            }
           }
         },
       },
-      { token: HEALTHCHECK, provider: { useFactory: healthCheckFactory } },
       {
-        token: REDIS_SUB,
+        token: HEALTHCHECK,
         provider: {
-          useFactory: instancePerContainerCachingFactory((): RedisClient => {
-            const subscriber = createClient();
-            return subscriber;
-          }),
-        },
-        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
-          const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
-          cleanupRegistry.register({
-            func: async () => {
-              await subscriber.quit();
-              return Promise.resolve();
-            },
-            id: REDIS_SUB,
-          });
-          await subscriber.connect();
-          logger.info('Connected to Redis Subscriber');
-          await redisSubscribe(deps);
+          useFactory: (depContainer): HealthCheck => {
+            return healthCheckFactory(depContainer);
+          },
         },
       },
       {
