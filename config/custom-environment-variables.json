@@ -56,9 +56,9 @@
       "key": "REDIS_KEY_PATH",
       "cert": "REDIS_CERT_PATH"
     },
-    "databases": {
-      "geocodingIndex": "REDIS_GEOCODING_INDEX",
-      "ttlIndex": "REDIS_TTL_INDEX"
+    "database": {
+      "__name": "REDIS_DATABASE",
+      "__format": "number"
     },
     "ttl": {
       "__name": "REDIS_TTL",

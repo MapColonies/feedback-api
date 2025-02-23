@@ -6,6 +6,8 @@ import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfac
 import { NotFoundError } from '../common/errors';
 import { RedisClient } from '../redis/index';
 
+const REDIS_PREFIX = 'ttl_';
+
 export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
   const topic = config.get<string>('outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
@@ -22,35 +24,40 @@ export const send = async (message: FeedbackResponse, logger: Logger, config: IC
 };
 
 export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisClient> => {
-  const geocodingRedis = deps.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
-  const ttlRedis = deps.resolve<RedisClient>(SERVICES.TTL_REDIS);
+  const redisClient = deps.resolve<RedisClient>(SERVICES.REDIS);
   const config = deps.resolve<IConfig>(SERVICES.CONFIG);
   const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
   const logger = deps.resolve<Logger>(SERVICES.LOGGER);
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   logger.debug('Redis subscriber init');
-  const ttlDB = config.get<number>('redis.databases.ttlIndex');
-  const geocodingDB = config.get<number>('redis.databases.geocodingIndex');
+  const redisIndex = config.get<number>('redis.database');
   const redisTTL = config.get<number>('redis.ttl');
 
-  await subscriber.subscribe(`__keyevent@${geocodingDB}__:set`, async (message) => {
-    logger.info(`Redis: Got new request ${message}`);
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    await ttlRedis.set(message, '', { EX: redisTTL });
+  await subscriber.subscribe(`__keyevent@${redisIndex}__:set`, async (message) => {
+    if (!message.startsWith(REDIS_PREFIX)) {
+      logger.info(`Redis: Got new request ${message}`);
+      const ttlMessage = REDIS_PREFIX + message;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      await redisClient.set(ttlMessage, '', { EX: redisTTL });
+    }
   });
 
-  await subscriber.subscribe(`__keyevent@${ttlDB}__:expired`, async (message: string) => {
-    let wasUsed;
-    const redisResponse = (await geocodingRedis.get(message)) as string;
-    if (redisResponse) {
-      const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
-      wasUsed = geocodingResponse.wasUsed;
+  await subscriber.subscribe(`__keyevent@${redisIndex}__:expired`, async (message: string) => {
+    if (message.startsWith(REDIS_PREFIX)) {
+      const geocodingMessage = message.substring(REDIS_PREFIX.length);
+
+      let wasUsed;
+      const redisResponse = (await redisClient.get(geocodingMessage)) as string;
+      if (redisResponse) {
+        const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+        wasUsed = geocodingResponse.wasUsed;
+      }
+      if (!(wasUsed ?? false)) {
+        await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
+      }
+      await redisClient.del(geocodingMessage);
     }
-    if (!(wasUsed ?? false)) {
-      await sendNoChosenResult(message, logger, config, kafkaProducer, geocodingRedis);
-    }
-    await geocodingRedis.del(message);
   });
   return subscriber;
 };
@@ -60,21 +67,21 @@ export const sendNoChosenResult = async (
   logger: Logger,
   config: IConfig,
   kafkaProducer: Producer,
-  geocodingRedis: RedisClient
+  redisClient: RedisClient
 ): Promise<void> => {
   const feedbackResponse: FeedbackResponse = {
     requestId,
     chosenResultId: null,
     userId: '',
     responseTime: new Date(),
-    geocodingResponse: await getNoChosenGeocodingResponse(requestId, logger, geocodingRedis),
+    geocodingResponse: await getNoChosenGeocodingResponse(requestId, logger, redisClient),
   };
   await send(feedbackResponse, logger, config, kafkaProducer);
 };
 
-export const getNoChosenGeocodingResponse = async (requestId: string, logger: Logger, geocodingRedis: RedisClient): Promise<GeocodingResponse> => {
+export const getNoChosenGeocodingResponse = async (requestId: string, logger: Logger, redisClient: RedisClient): Promise<GeocodingResponse> => {
   try {
-    const redisResponse = await geocodingRedis.get(requestId);
+    const redisResponse = await redisClient.get(requestId);
     if (redisResponse != null) {
       const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
       return geocodingResponse;

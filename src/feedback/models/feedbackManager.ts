@@ -11,7 +11,7 @@ import { IFeedbackModel } from './feedback';
 export class FeedbackManager {
   public constructor(
     @inject(SERVICES.LOGGER) private readonly logger: Logger,
-    @inject(SERVICES.GEOCODING_REDIS) private readonly geocodingRedis: RedisClient,
+    @inject(SERVICES.REDIS) private readonly redisClient: RedisClient,
     @inject(SERVICES.KAFKA) private readonly kafkaProducer: Producer,
     @inject(SERVICES.CONFIG) private readonly config: IConfig
   ) {}
@@ -32,7 +32,7 @@ export class FeedbackManager {
       responseTime: new Date(),
       geocodingResponse: await this.getGeocodingResponse(requestId, userId, apiKey),
     };
-    await this.geocodingRedis.set(requestId, JSON.stringify(feedbackResponse.geocodingResponse));
+    await this.redisClient.set(requestId, JSON.stringify(feedbackResponse.geocodingResponse));
 
     this.logger.info({ msg: 'creating feedback', requestId });
     await this.send(feedbackResponse);
@@ -41,7 +41,7 @@ export class FeedbackManager {
 
   public async getGeocodingResponse(requestId: string, userId: string, apiKey: string): Promise<GeocodingResponse> {
     try {
-      const redisResponse = (await this.geocodingRedis.get(requestId)) as string;
+      const redisResponse = (await this.redisClient.get(requestId)) as string;
       if (redisResponse) {
         const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
         geocodingResponse.userId = userId;

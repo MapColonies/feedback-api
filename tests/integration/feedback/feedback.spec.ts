@@ -23,7 +23,7 @@ const mockKafkaProducer = {
 
 describe('feedback', function () {
   let requestSender: FeedbackRequestSender;
-  let geocodingRedis: RedisClient;
+  let redisClient: RedisClient;
   let depContainer: DependencyContainer;
 
   beforeAll(async function () {
@@ -36,7 +36,7 @@ describe('feedback', function () {
       useChild: true,
     });
     requestSender = new FeedbackRequestSender(app);
-    geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
+    redisClient = container.resolve<RedisClient>(SERVICES.REDIS);
     depContainer = container;
   });
 
@@ -56,7 +56,7 @@ describe('feedback', function () {
         respondedAt: new Date('2024-08-29T14:39:10.602Z'),
       };
       const redisKey = crypto.randomUUID();
-      await geocodingRedis.set(redisKey, JSON.stringify(geocodingResponse));
+      await redisClient.set(redisKey, JSON.stringify(geocodingResponse));
 
       const feedbackModel: IFeedbackModel = {
         request_id: redisKey,
@@ -77,12 +77,12 @@ describe('feedback', function () {
       };
       const redisKey = crypto.randomUUID();
 
-      await geocodingRedis.set(redisKey, JSON.stringify(geocodingResponse));
-      expect(await geocodingRedis.exists(redisKey)).toBe(1);
+      await redisClient.set(redisKey, JSON.stringify(geocodingResponse));
+      expect(await redisClient.exists(redisKey)).toBe(1);
 
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       setTimeout(async () => {
-        expect(await geocodingRedis.exists(redisKey)).toBe(0);
+        expect(await redisClient.exists(redisKey)).toBe(0);
       }, 3000);
     });
 
@@ -96,7 +96,7 @@ describe('feedback', function () {
         response: JSON.parse('["USA"]') as JSON,
         respondedAt: new Date(),
       };
-      await geocodingRedis.set(requestId, JSON.stringify(geocodingResponse));
+      await redisClient.set(requestId, JSON.stringify(geocodingResponse));
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
@@ -146,7 +146,7 @@ describe('feedback', function () {
 
       const requestId = crypto.randomUUID();
 
-      depContainer.register(SERVICES.GEOCODING_REDIS, { useValue: mockRedis });
+      depContainer.register(SERVICES.REDIS, { useValue: mockRedis });
       depContainer.register(SERVICES.LOGGER, { useValue: mockLogger });
 
       (mockRedis.get as jest.Mock).mockRejectedValue(new Error('Redis get failed'));
@@ -213,7 +213,7 @@ describe('feedback', function () {
         info: jest.fn(),
       } as unknown as jest.Mocked<Logger>;
 
-      depContainer.register(SERVICES.GEOCODING_REDIS, { useValue: mockRedis });
+      depContainer.register(SERVICES.REDIS, { useValue: mockRedis });
       const requestId = crypto.randomUUID();
 
       (mockRedis.get as jest.Mock).mockResolvedValue(null);

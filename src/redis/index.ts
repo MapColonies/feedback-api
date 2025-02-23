@@ -1,16 +1,18 @@
 import { readFileSync } from 'fs';
 import { inject, injectable } from 'tsyringe';
 import { Logger } from '@map-colonies/js-logger';
+import { HealthCheck } from '@godaddy/terminus';
 import { createClient, RedisClientOptions } from 'redis';
 import { SERVICES } from '../common/constants';
 import { RedisConfig, IConfig } from '../common/interfaces';
+import { promiseTimeout } from '../common/utils';
 
 @injectable()
 export class RedisClientFactory {
   public constructor(@inject(SERVICES.LOGGER) private readonly logger: Logger, @inject(SERVICES.CONFIG) private readonly config: IConfig) {}
 
-  public createConnectionOptions(redisConfig: RedisConfig, isGeocodingRedis: boolean): Partial<RedisClientOptions> {
-    const { host, port, enableSslAuth, sslPaths, databases, ...clientOptions } = redisConfig;
+  public createConnectionOptions(redisConfig: RedisConfig): Partial<RedisClientOptions> {
+    const { host, port, enableSslAuth, sslPaths, ...clientOptions } = redisConfig;
     clientOptions.socket = { host, port };
     if (enableSslAuth) {
       clientOptions.socket = {
@@ -21,19 +23,12 @@ export class RedisClientFactory {
         ca: sslPaths.ca !== '' ? readFileSync(sslPaths.ca) : undefined,
       };
     }
-    if (isGeocodingRedis) {
-      clientOptions.database = databases.geocodingIndex;
-    } else {
-      clientOptions.database = databases.ttlIndex;
-    }
     return clientOptions;
   }
 
-  public createRedisClient(redisIndex: symbol): RedisClient {
+  public createRedisClient(): RedisClient {
     const dbConfig = this.config.get<RedisConfig>('redis');
-
-    const isGeocodingRedis: boolean = redisIndex === SERVICES.GEOCODING_REDIS;
-    const connectionOptions = this.createConnectionOptions(dbConfig, isGeocodingRedis);
+    const connectionOptions = this.createConnectionOptions(dbConfig);
 
     const redisClient = createClient(connectionOptions)
       .on('error', (error: Error) => this.logger.error({ msg: 'redis client errored', err: error }))
@@ -47,3 +42,14 @@ export class RedisClientFactory {
 }
 
 export type RedisClient = ReturnType<typeof createClient>;
+
+export const CONNECTION_TIMEOUT = 5000;
+
+export const healthCheckFunctionFactory = (redis: RedisClient): HealthCheck => {
+  return async (): Promise<void> => {
+    const check = redis.ping().then(() => {
+      return;
+    });
+    return promiseTimeout<void>(CONNECTION_TIMEOUT, check);
+  };
+};

@@ -12,10 +12,9 @@ import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_S
 import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { RedisClientFactory } from './redis';
+import { healthCheckFunctionFactory, RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
-import { healthCheckFactory } from './common/utils';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -80,8 +79,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
         postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
           const redisFactory = deps.resolve<RedisClientFactory>(REDIS_CLIENT_FACTORY);
 
-          for (const redisIndex of [SERVICES.GEOCODING_REDIS, SERVICES.TTL_REDIS, REDIS_SUB]) {
-            const redis = redisFactory.createRedisClient(redisIndex);
+          for (const redisIndex of [SERVICES.REDIS, REDIS_SUB]) {
+            const redis = redisFactory.createRedisClient();
             deps.register(redisIndex, { useValue: redis });
             cleanupRegistry.register({
               func: async (): Promise<void> => {
@@ -105,8 +104,9 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
       {
         token: HEALTHCHECK,
         provider: {
-          useFactory: (depContainer): HealthCheck => {
-            return healthCheckFactory(depContainer);
+          useFactory: (container): HealthCheck => {
+            const redis = container.resolve<RedisClient>(SERVICES.REDIS);
+            return healthCheckFunctionFactory(redis);
           },
         },
       },
