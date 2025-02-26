@@ -6,10 +6,10 @@ Geocoding's feedback API collects usage data from the [Geocoding API](https://gi
 Checkout the OpenAPI spec [here](/openapi3.yaml)
 
 ## Workflow
-![workflow img](https://github.com/user-attachments/assets/e325dbac-933d-48fd-9143-ea8c09f23ba7)
+![workflow img](https://github.com/user-attachments/assets/63b8c7ed-4509-4dea-87ae-dc0cfc625ff9)
 
 ## How does it work?
-Once a Geocoding user searches for something using Geocoding's api, it enters Redis, and an event is triggered. This event adds to the `requestId` (from geocoding) a prefex, and adds it also to Redis with a ttl.<br/><br/>
+Once a Geocoding user searches for something using Geocoding's api, it enters Redis, and an event is triggered. This event adds to the `requestId` (from geocoding) a prefix, and adds it also to Redis with a ttl.<br/><br/>
 When the Geocoding user chooses a result, the requesting system will then send the `request_id`, the `chosen_response_id`, and the `user_id` back to us using the [Feedback api](/openapi3.yaml).<br/>
 Once we get the chosen response from the api, we validate it and make sure it exists in the Redis, and once it is validated we add a `wasUsed = true` parameter to the geocoding response (in Redis) for later use. We then send the response to Kafka (where it will later be enriched and added to elastic -> see [Geocoding Enrichment](https://github.com/MapColonies/geocoding-enrichment) for more details).<br/>
 Once the TTL of the `requestId` expires an even is triggered, and there are two options:<br/>
