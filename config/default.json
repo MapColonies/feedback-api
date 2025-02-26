@@ -36,7 +36,6 @@
       "key": "",
       "cert": ""
     },
-    "database": 0,
     "ttl": 300
   },
   "kafka": {

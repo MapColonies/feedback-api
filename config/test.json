@@ -10,7 +10,6 @@
       "key": "",
       "cert": ""
     },
-    "database": 1,
     "ttl": 2
   },
   "kafka": {

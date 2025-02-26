@@ -6,7 +6,7 @@ import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfac
 import { NotFoundError } from '../common/errors';
 import { RedisClient } from '../redis/index';
 
-const REDIS_PREFIX = 'ttl_';
+const TTL_PREFIX = 'ttl_';
 
 export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
   const topic = config.get<string>('outputTopic');
@@ -31,21 +31,20 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   logger.debug('Redis subscriber init');
-  const redisIndex = config.get<number>('redis.database');
   const redisTTL = config.get<number>('redis.ttl');
 
-  await subscriber.subscribe(`__keyevent@${redisIndex}__:set`, async (message) => {
-    if (!message.startsWith(REDIS_PREFIX)) {
+  await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
+    if (!message.startsWith(TTL_PREFIX)) {
       logger.info(`Redis: Got new request ${message}`);
-      const ttlMessage = REDIS_PREFIX + message;
+      const ttlMessage = TTL_PREFIX + message;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       await redisClient.set(ttlMessage, '', { EX: redisTTL });
     }
   });
 
-  await subscriber.subscribe(`__keyevent@${redisIndex}__:expired`, async (message: string) => {
-    if (message.startsWith(REDIS_PREFIX)) {
-      const geocodingMessage = message.substring(REDIS_PREFIX.length);
+  await subscriber.subscribe(`__keyevent@0__:expired`, async (message: string) => {
+    if (message.startsWith(TTL_PREFIX)) {
+      const geocodingMessage = message.substring(TTL_PREFIX.length);
 
       let wasUsed;
       const redisResponse = (await redisClient.get(geocodingMessage)) as string;

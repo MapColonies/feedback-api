@@ -75,7 +75,6 @@ redisConfig:
   host: localhost
   username: ""
   password: ""
-  database: 0
   port: 6379
   sslAuth:
     enabled: false
