@@ -21,7 +21,6 @@ data:
   
   {{- with .Values.redisConfig }}
   REDIS_HOST: {{ .host }}
-  REDIS_DATABASE: {{ .database | quote}}
   REDIS_PORT: {{ .port | quote }}
   {{- if .sslAuth.enabled }}
   REDIS_ENABLE_SSL_AUTH: "true"

@@ -10,14 +10,10 @@
       "key": "",
       "cert": ""
     },
-    "databases": {
-      "geocodingIndex": 2,
-      "ttlIndex": 3
-    },
     "ttl": 2
   },
   "kafka": {
-    "brokers": "kafka:9092"
+    "brokers": "localhost:9092"
   },
   "kafkaConsumer": {},
   "kafkaProducer": {},

@@ -1,52 +1,14 @@
-import { DependencyContainer } from 'tsyringe';
-import { Logger } from '@map-colonies/js-logger';
-import { HealthCheck } from '@godaddy/terminus';
-import { RedisClient } from '../redis/index';
-import { SERVICES } from './constants';
+import { TimeoutError } from './errors';
 
-export const healthCheckFactory = (container: DependencyContainer): HealthCheck => {
-  return async (): Promise<void> => {
-    const logger = container.resolve<Logger>(SERVICES.LOGGER);
-    const geocodingRedis = container.resolve<RedisClient>(SERVICES.GEOCODING_REDIS);
-    const ttlRedis = container.resolve<RedisClient>(SERVICES.TTL_REDIS);
+export const promiseTimeout = async <T>(ms: number, promise: Promise<T>): Promise<T> => {
+  // create a promise that rejects in <ms> milliseconds
+  const timeout = new Promise<T>((_, reject) => {
+    const id = setTimeout(() => {
+      clearTimeout(id);
+      reject(new TimeoutError(`Timed out in + ${ms} + ms.`));
+    }, ms);
+  });
 
-    const promises: Promise<unknown>[] = [];
-
-    promises.push(
-      new Promise((resolve, reject) => {
-        geocodingRedis
-          .ping()
-          .then(() => {
-            resolve('Healthcheck passed for GeocodingRedis connection');
-          })
-          .catch((error: Error) => {
-            reject({
-              msg: `Healthcheck failed for GeocodingRedis.`,
-              error,
-            });
-          });
-      })
-    );
-    promises.push(
-      new Promise((resolve, reject) => {
-        ttlRedis
-          .ping()
-          .then(() => {
-            resolve('Healthcheck passed for TTLRedis connection');
-          })
-          .catch((error: Error) => {
-            reject({
-              msg: `Healthcheck failed for TTLRedis.`,
-              error,
-            });
-          });
-      })
-    );
-
-    await Promise.allSettled(promises).then((results) => {
-      results.forEach((msg) => logger.debug({ msg }));
-    });
-
-    return Promise.resolve();
-  };
+  // returns a race between our timeout and the passed in promise
+  return Promise.race([promise, timeout]);
 };

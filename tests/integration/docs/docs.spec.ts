@@ -16,8 +16,7 @@ describe('docs', function () {
       override: [
         { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
-        { token: SERVICES.GEOCODING_REDIS, provider: { useValue: {} } },
-        { token: SERVICES.TTL_REDIS, provider: { useValue: {} } },
+        { token: SERVICES.REDIS, provider: { useValue: {} } },
         { token: REDIS_SUB, provider: { useValue: {} } },
         { token: SERVICES.KAFKA, provider: { useValue: {} } },
       ],

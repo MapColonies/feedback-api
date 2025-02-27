@@ -12,8 +12,7 @@ export const SERVICES = {
   CONFIG: Symbol('Config'),
   TRACER: Symbol('Tracer'),
   METER: Symbol('Meter'),
-  GEOCODING_REDIS: Symbol('GeocodingRedis'),
-  TTL_REDIS: Symbol('TTLRedis'),
+  REDIS: Symbol('Redis'),
   KAFKA: Symbol('Kafka'),
 } satisfies Record<string, symbol>;
 /* eslint-enable @typescript-eslint/naming-convention */
