@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/MapColonies/feedback-api/compare/v0.1.7...v0.1.8) (2025-02-27)
+
+
+### Bug Fixes
+
+* remove redis logical db (MAPCO-6821) ([#9](https://github.com/MapColonies/feedback-api/issues/9)) ([9921a19](https://github.com/MapColonies/feedback-api/commit/9921a1992ba72cdcf50be3925153eb0169a419de))
+
 ### [0.1.7](https://github.com/MapColonies/feedback-api/compare/v0.1.6...v0.1.7) (2025-02-19)
 
 

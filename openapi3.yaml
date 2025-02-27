@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: feedback api
   description: Api to eventually do BI on the data from responses from Geocoding.
-  version: 0.1.7
+  version: 0.1.8
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
