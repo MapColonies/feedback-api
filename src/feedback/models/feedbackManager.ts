@@ -19,10 +19,12 @@ export class FeedbackManager {
   public async createFeedback(feedback: IFeedbackModel, apiKey: string): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
-    const userValidation = this.config.get<string>('application.userValidation');
+    const userValidation = this.config.get<string[]>('application.userValidation');
 
-    if (!userId.endsWith(userValidation)) {
-      throw new BadRequestError(`user_id not valid. valid user_id ends with "${userValidation}"`);
+    const validateUser = !userValidation.some((validEnding) => validEnding && userId.endsWith(validEnding));
+    
+    if (validateUser) {
+      throw new BadRequestError(`user_id not valid. valid user_id ends with "${JSON.stringify(userValidation)}"`);
     }
 
     const feedbackResponse: FeedbackResponse = {

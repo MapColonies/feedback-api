@@ -51,6 +51,6 @@
   "kafkaProducer": {},
   "outputTopic": "topic",
   "application": {
-    "userValidation": "@mycompany.net"
+    "userValidation": ["@mycompany.net"]
   }
 }

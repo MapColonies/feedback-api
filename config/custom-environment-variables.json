@@ -77,6 +77,7 @@
   "kafkaProducer": {},
   "outputTopic": "KAFKA_OUTPUT_TOPIC",
   "application": {
-    "userValidation": "USER_ID_DOMAIN"
+    "userValidation": "USER_ID_DOMAIN",
+    "__format": "json"
   }
 }
