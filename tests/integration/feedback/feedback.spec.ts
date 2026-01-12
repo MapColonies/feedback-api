@@ -69,6 +69,7 @@ describe('feedback', function () {
     });
 
     it('Redis key should not exist in geocodingIndex after TTL has passed', async function () {
+      const redisTtl = config.get<number>('redis.ttl');
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
         site: 'test',
@@ -83,12 +84,13 @@ describe('feedback', function () {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       setTimeout(async () => {
         expect(await redisClient.exists(redisKey)).toBe(0);
-      }, 3000);
+      }, (redisTtl + 1) * 1000);
     });
 
     it('Should send feedback to kafka also when no response was chosen', async function () {
       const topic = config.get<string>('outputTopic');
       const requestId = crypto.randomUUID();
+      const redisTtl = config.get<number>('redis.ttl');
 
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
@@ -98,7 +100,7 @@ describe('feedback', function () {
       };
       await redisClient.set(requestId, JSON.stringify(geocodingResponse));
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, (redisTtl + 1) * 1000));
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockKafkaProducer.send).toHaveBeenCalledWith({
