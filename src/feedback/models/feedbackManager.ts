@@ -20,21 +20,25 @@ export class FeedbackManager {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
     const userValidation = this.config.get<string[]>('application.userValidation');
+    const ttl = this.config.get<number>('redis.ttl');
+    const prefix = this.config.has('redis.prefix') ? this.config.get<string>('redis.prefix') : undefined;
 
     const validateUser = !userValidation.some((validEnding) => validEnding && userId.endsWith(validEnding));
-    
     if (validateUser) {
       throw new BadRequestError(`user_id not valid. valid user_id ends with "${JSON.stringify(userValidation)}"`);
     }
+
+    const fullRequestId = prefix !== undefined ? `${prefix}:${requestId}` : requestId;
 
     const feedbackResponse: FeedbackResponse = {
       requestId: requestId,
       chosenResultId: feedback.chosen_result_id,
       userId: userId,
       responseTime: new Date(),
-      geocodingResponse: await this.getGeocodingResponse(requestId, userId, apiKey),
+      geocodingResponse: await this.getGeocodingResponse(fullRequestId, userId, apiKey),
     };
-    await this.redisClient.set(requestId, JSON.stringify(feedbackResponse.geocodingResponse));
+
+    await this.redisClient.setEx(fullRequestId, ttl, JSON.stringify(feedbackResponse.geocodingResponse));
 
     this.logger.info({ msg: 'creating feedback', requestId });
     await this.send(feedbackResponse);

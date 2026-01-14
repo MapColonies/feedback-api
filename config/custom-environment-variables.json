@@ -59,7 +59,12 @@
     "ttl": {
       "__name": "REDIS_TTL",
       "__format": "number"
-    }
+    },
+    "expiredResponseTtl": {
+      "__name": "REDIS_EXPIRED_RESPONSE_TTL",
+      "__format": "number"
+    },
+    "prefix": "REDIS_KEY_PREFIX"
   },
   "kafka": {
     "brokers": "KAFKA_BROKERS",
