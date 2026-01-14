@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import * as crypto from 'node:crypto';
 import config from 'config';
 import jsLogger from '@map-colonies/js-logger';
 import { createClient } from 'redis';
