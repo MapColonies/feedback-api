@@ -8,6 +8,17 @@ import { IFeedbackModel } from '../../../../src/feedback/models/feedback';
 import { BadRequestError, NotFoundError } from '../../../../src/common/errors';
 import { RedisClient } from '../../../../src/redis';
 
+interface MockConfig {
+  get: jest.Mock;
+  has: jest.Mock;
+}
+
+const makeConfig = (overrides?: Partial<MockConfig>): MockConfig => ({
+  get: jest.fn(),
+  has: jest.fn(),
+  ...overrides,
+});
+
 const mockProducer = {
   connect: jest.fn(),
   send: jest.fn(),
@@ -19,6 +30,7 @@ jest.mock('redis', () => ({
   createClient: jest.fn().mockImplementation(() => ({
     get: jest.fn(),
     set: jest.fn(),
+    setEx: jest.fn(),
   })),
 }));
 
@@ -45,7 +57,7 @@ describe('FeedbackManager', () => {
 
   describe('#createFeadback', () => {
     it('should create feedback without errors', async function () {
-      const requestId = '417a4635-0c59-4b5c-877c-45b4bbaaac7a';
+      const requestId = crypto.randomUUID();
       const chosenResultId = 3;
       const userId = 'user1@mycompany.net';
 
@@ -62,8 +74,86 @@ describe('FeedbackManager', () => {
       expect(mockedRedis.get).toHaveBeenCalledTimes(1);
     });
 
+    it('should use redis prefix when configured', async function () {
+      const requestId = crypto.randomUUID();
+      const chosenResultId = 3;
+      const userId = 'user1@mycompany.net';
+
+      const mockedConfig = makeConfig();
+      mockedConfig.has.mockImplementation((key: string) => key === 'redis.prefix');
+      mockedConfig.get.mockImplementation((key: string) => {
+        if (key === 'application.userValidation') {
+          return ['@mycompany.net'];
+        }
+        if (key === 'redis.ttl') {
+          return 10;
+        }
+        if (key === 'redis.prefix') {
+          return 'feedback-test';
+        }
+        if (key === 'outputTopic') {
+          return 'test-topic';
+        }
+        throw new Error(`Unexpected key: ${key}`);
+      });
+
+      const mockedManager = new FeedbackManager(
+        jsLogger({ enabled: false }),
+        mockedRedis,
+        mockProducer as unknown as jest.Mocked<Producer>,
+        mockedConfig
+      );
+
+      const feedbackRequest: IFeedbackModel = { request_id: requestId, chosen_result_id: chosenResultId, user_id: userId };
+      (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
+
+      const feedback = await mockedManager.createFeedback(feedbackRequest, 'token');
+
+      expect(feedback.requestId).toBe(requestId);
+
+      const expectedKey = `feedback-test:${requestId}`;
+      expect(mockedRedis.get).toHaveBeenCalledWith(expectedKey);
+      expect(mockedRedis.setEx).toHaveBeenCalledWith(expectedKey, 10, JSON.stringify(feedback.geocodingResponse));
+    });
+
+    it('should not use redis prefix when not configured', async () => {
+      const requestId = crypto.randomUUID();
+      const userId = 'user1@mycompany.net';
+
+      const mockedConfig = makeConfig();
+      mockedConfig.has.mockReturnValue(false);
+      mockedConfig.get.mockImplementation((key: string) => {
+        if (key === 'application.userValidation') {
+          return ['@mycompany.net'];
+        }
+        if (key === 'redis.ttl') {
+          return 10;
+        }
+        if (key === 'outputTopic') {
+          return 'test-topic';
+        }
+        throw new Error(`Unexpected key: ${key}`);
+      });
+
+      const mockedManager = new FeedbackManager(
+        jsLogger({ enabled: false }),
+        mockedRedis,
+        mockProducer as unknown as jest.Mocked<Producer>,
+        mockedConfig
+      );
+
+      (mockedRedis.get as jest.Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
+
+      const feedbackRequest: IFeedbackModel = { request_id: requestId, chosen_result_id: 3, user_id: userId };
+
+      await mockedManager.createFeedback(feedbackRequest, 'token');
+
+      // key should be raw
+      expect(mockedRedis.get).toHaveBeenCalledWith(requestId);
+    });
+
     it('should not create feedback when user_id is not valid', async function () {
-      const feedbackRequest: IFeedbackModel = { request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a', chosen_result_id: 3, user_id: 'user1' };
+      const feedbackRequest: IFeedbackModel = { request_id: crypto.randomUUID(), chosen_result_id: 3, user_id: 'user1' };
       const feedback = feedbackManager.createFeedback(feedbackRequest, 'token');
 
       await expect(feedback).rejects.toThrow(BadRequestError);
@@ -71,7 +161,7 @@ describe('FeedbackManager', () => {
 
     it('should not create feedback when request_id is not found', async function () {
       const feedbackRequest: IFeedbackModel = {
-        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        request_id: crypto.randomUUID(),
         chosen_result_id: 3,
         user_id: 'user1@mycompany.net',
       };
@@ -82,7 +172,7 @@ describe('FeedbackManager', () => {
 
     it('should not be able to upload feedback to kafka', async function () {
       const feedbackRequest: IFeedbackModel = {
-        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        request_id: crypto.randomUUID(),
         chosen_result_id: 3,
         user_id: 'user1@mycompany.net',
       };
@@ -96,7 +186,7 @@ describe('FeedbackManager', () => {
 
     it('should not be able to upload feedback to kafka because redis is unavailable', async function () {
       const feedbackRequest: IFeedbackModel = {
-        request_id: '417a4635-0c59-4b5c-877c-45b4bbaaac7a',
+        request_id: crypto.randomUUID(),
         chosen_result_id: 3,
         user_id: 'user1@mycompany.net',
       };
