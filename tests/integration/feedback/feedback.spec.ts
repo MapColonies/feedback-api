@@ -8,7 +8,7 @@ import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { getApp } from '../../../src/app';
-import { CLEANUP_REGISTRY, SERVICES } from '../../../src/common/constants';
+import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '../../../src/common/constants';
 import { IFeedbackModel } from '../../../src/feedback/models/feedback';
 import { FeedbackResponse, GeocodingResponse } from '../../../src/common/interfaces';
 import { RedisClient } from '../../../src/redis';
@@ -81,10 +81,8 @@ describe('feedback', function () {
       await redisClient.set(redisKey, JSON.stringify(geocodingResponse));
       expect(await redisClient.exists(redisKey)).toBe(1);
 
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      setTimeout(async () => {
-        expect(await redisClient.exists(redisKey)).toBe(0);
-      }, (redisTtl + 1) * 1000);
+      await new Promise((resolve) => setTimeout(resolve, (redisTtl + 1) * 1000));
+      expect(await redisClient.exists(redisKey)).toBe(0);
     });
 
     it('Should send feedback to kafka also when no response was chosen', async function () {
@@ -175,7 +173,14 @@ describe('feedback', function () {
         expect(response.status).toBe(httpStatusCodes.NO_CONTENT);
 
         await redisConnection.del(`${prefix}:${redisKey}`);
-        await localContainer.dispose();
+        const subscriber = localContainer.resolve<RedisClient>(REDIS_SUB);
+
+        await subscriber.unsubscribe('__keyevent@0__:set');
+        await subscriber.unsubscribe('__keyevent@0__:expired');
+
+        const localCleanup = localContainer.resolve<CleanupRegistry>(CLEANUP_REGISTRY);
+        await localCleanup.trigger();
+        localContainer.reset();
       });
     });
   });
