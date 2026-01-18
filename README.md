@@ -31,6 +31,12 @@ npm install
 npx husky install
 ```
 
+#### Make sure you have keyspace notifications in Redis
+In `redis-cli`
+```bash
+CONFIG SET notify-keyspace-events KEA
+```
+
 ## Run Locally
 
 Clone the project

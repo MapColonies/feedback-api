@@ -10,7 +10,8 @@
       "key": "",
       "cert": ""
     },
-    "ttl": 2
+    "ttl": 600,
+    "expiredResponseTtl": 2
   },
   "kafka": {
     "brokers": "localhost:9092"
@@ -19,6 +20,6 @@
   "kafkaProducer": {},
   "outputTopic": "testTopic",
   "application": {
-    "userValidation": "@mycompany.net"
+    "userValidation": ["@mycompany.net"]
   }
 }
