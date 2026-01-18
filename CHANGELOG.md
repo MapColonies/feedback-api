@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.9](https://github.com/MapColonies/feedback-api/compare/v0.1.8...v0.1.9) (2026-01-18)
+
+
+### Features
+
+* added additional user validation support ([bca85ac](https://github.com/MapColonies/feedback-api/commit/bca85ace93c00c96e6175817e813dd33fbb60728))
+* added redis ttl and prefix ([ce7520d](https://github.com/MapColonies/feedback-api/commit/ce7520deae9acd2c0d896e10118663a1179d1a2d))
+
+
+### Bug Fixes
+
+* added missing import ([b9ab757](https://github.com/MapColonies/feedback-api/commit/b9ab75724412df3c0bf56a7036344c96c9edf982))
+* client it closed in tests ([0ab4999](https://github.com/MapColonies/feedback-api/commit/0ab4999836de8f63c2602ee001cbefb03f3c9790))
+* removed magic numbers ([19b1e28](https://github.com/MapColonies/feedback-api/commit/19b1e28e2a2ab9faa0d1ceaa8cb88202a87467c5))
+
 ### [0.1.8](https://github.com/MapColonies/feedback-api/compare/v0.1.7...v0.1.8) (2025-02-27)
 
 
