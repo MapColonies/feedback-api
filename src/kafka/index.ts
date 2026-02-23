@@ -20,6 +20,7 @@ export const kafkaClientFactory: FactoryFunction<Producer> = (container: Depende
             ca: [readFileSync(kafkaConfig.sslPaths.ca, 'utf-8')],
           }
         : undefined,
+      sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,
     };
   }
   const producerConfig = config.get<ProducerConfig>('kafkaProducer');
