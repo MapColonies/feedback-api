@@ -19,7 +19,7 @@ export class FeedbackManager {
   public async createFeedback(feedback: IFeedbackModel, apiKey: string): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
-    const userValidation = this.config.get<string[]>('application.userValidation');
+    const userValidation = JSON.parse(this.config.get<string>('application.userValidation')) as string[];
     const ttl = this.config.get<number>('redis.ttl');
     const prefix = this.config.has('redis.prefix') ? this.config.get<string>('redis.prefix') : undefined;
 
