@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/MapColonies/feedback-api/compare/v0.1.8...v0.2.1) (2026-02-26)
+
+
+### Features
+
+* add sasl login to kafka ([#12](https://github.com/MapColonies/feedback-api/issues/12)) ([30249c6](https://github.com/MapColonies/feedback-api/commit/30249c659079f13b3ca9d8a3b7ae0aebd7e5a8e4))
+* redis prefix and user validation ([#10](https://github.com/MapColonies/feedback-api/issues/10)) ([3b1b9d3](https://github.com/MapColonies/feedback-api/commit/3b1b9d37822b144d4e0084bdd8cb3be743055b96))
+
+
+### Bug Fixes
+
+* add json parse to read as array ([#15](https://github.com/MapColonies/feedback-api/issues/15)) ([287c14c](https://github.com/MapColonies/feedback-api/commit/287c14c51bc4cde333dbe03f8251ab238a4ff70f))
+
 ## [0.2.0](https://github.com/MapColonies/feedback-api/compare/v0.1.8...v0.2.0) (2026-02-24)
 
 
