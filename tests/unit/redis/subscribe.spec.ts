@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import jsLogger from '@map-colonies/js-logger';
 import { DependencyContainer } from 'tsyringe';
 import { Producer } from 'kafkajs';
@@ -10,9 +9,15 @@ type ExpiredCallback = (message: string) => Promise<void>;
 
 const buildConfig = (prefix?: string): { get: jest.Mock; has: jest.Mock } => ({
   get: jest.fn().mockImplementation((key: string) => {
-    if (key === 'redis.expiredResponseTtl') return 300;
-    if (key === 'redis.prefix') return prefix;
-    if (key === 'outputTopic') return 'test-topic';
+    if (key === 'redis.expiredResponseTtl') {
+      return 300;
+    }
+    if (key === 'redis.prefix') {
+      return prefix;
+    }
+    if (key === 'outputTopic') {
+      return 'test-topic';
+    }
     return undefined;
   }),
   has: jest.fn().mockImplementation((key: string) => key === 'redis.prefix' && prefix !== undefined),
@@ -33,10 +38,13 @@ describe('redisSubscribe', () => {
     };
 
     mockSubscriber = {
-      subscribe: jest.fn().mockImplementation((channel: string, callback: SetCallback | ExpiredCallback) => {
-        if (channel.includes(':set')) setCallback = callback as SetCallback;
-        if (channel.includes(':expired')) expiredCallback = callback as ExpiredCallback;
-        return Promise.resolve();
+      subscribe: jest.fn().mockImplementation(async (channel: string, callback: SetCallback | ExpiredCallback) => {
+        if (channel.includes(':set')) {
+          setCallback = callback as SetCallback;
+        }
+        if (channel.includes(':expired')) {
+          expiredCallback = callback as ExpiredCallback;
+        }
       }),
     };
 
@@ -46,11 +54,21 @@ describe('redisSubscribe', () => {
   const setup = async (prefix?: string): Promise<void> => {
     const mockContainer = {
       resolve: jest.fn().mockImplementation((token: symbol) => {
-        if (token === SERVICES.REDIS) return mockRedisClient;
-        if (token === REDIS_SUB) return mockSubscriber;
-        if (token === SERVICES.CONFIG) return buildConfig(prefix);
-        if (token === SERVICES.KAFKA) return mockProducer as unknown as Producer;
-        if (token === SERVICES.LOGGER) return jsLogger({ enabled: false });
+        if (token === SERVICES.REDIS) {
+          return mockRedisClient;
+        }
+        if (token === REDIS_SUB) {
+          return mockSubscriber;
+        }
+        if (token === SERVICES.CONFIG) {
+          return buildConfig(prefix);
+        }
+        if (token === SERVICES.KAFKA) {
+          return mockProducer as unknown as Producer;
+        }
+        if (token === SERVICES.LOGGER) {
+          return jsLogger({ enabled: false });
+        }
         return undefined;
       }),
     } as unknown as DependencyContainer;
