@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import jsLogger from '@map-colonies/js-logger';
 import { DependencyContainer } from 'tsyringe';
 import { Producer } from 'kafkajs';
@@ -38,7 +39,7 @@ describe('redisSubscribe', () => {
     };
 
     mockSubscriber = {
-      subscribe: jest.fn().mockImplementation(async (channel: string, callback: SetCallback | ExpiredCallback) => {
+      subscribe: jest.fn().mockImplementation((channel: string, callback: SetCallback | ExpiredCallback) => {
         if (channel.includes(':set')) {
           setCallback = callback as SetCallback;
         }
