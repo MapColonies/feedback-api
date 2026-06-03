@@ -36,10 +36,11 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;
   await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
-    if (!message.startsWith(prefixWithTtl)) {
+    const isTtlKey = message.startsWith(TTL_PREFIX) || message.includes(`:${TTL_PREFIX}`);
+    if (!isTtlKey) {
       logger.info(`Redis: Got new request ${message}`);
 
-      const noPrefixMessage = redisPrefix !== undefined ? message.split(':')[1] : message;
+      const noPrefixMessage = redisPrefix !== undefined ? message.substring(`${redisPrefix}:`.length) : message;
       const ttlMessage = prefixWithTtl + noPrefixMessage;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       await redisClient.set(ttlMessage, '', { EX: redisTTL });
