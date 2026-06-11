@@ -23,7 +23,7 @@ export const kafkaClientFactory: FactoryFunction<Producer> = (container: Depende
       sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,
     };
   }
-  const producerConfig = config.get<ProducerConfig>('kafkaProducer');
+  const producerConfig = config.get<ProducerConfig>('kafka.producer');
   const kafka = new Kafka(kafkaConfig);
   const producer = kafka.producer(producerConfig);
 

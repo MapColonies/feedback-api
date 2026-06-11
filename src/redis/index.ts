@@ -1,26 +1,29 @@
 import { readFileSync } from 'fs';
 import { inject, injectable } from 'tsyringe';
-import { Logger } from '@map-colonies/js-logger';
+import { type Logger } from '@map-colonies/js-logger';
 import { HealthCheck } from '@godaddy/terminus';
 import { createClient, RedisClientOptions } from 'redis';
 import { SERVICES } from '../common/constants';
-import { RedisConfig, IConfig } from '../common/interfaces';
+import { RedisConfig, type IConfig } from '../common/interfaces';
 import { promiseTimeout } from '../common/utils';
 
 @injectable()
 export class RedisClientFactory {
-  public constructor(@inject(SERVICES.LOGGER) private readonly logger: Logger, @inject(SERVICES.CONFIG) private readonly config: IConfig) {}
+  public constructor(
+    @inject(SERVICES.LOGGER) private readonly logger: Logger,
+    @inject(SERVICES.CONFIG) private readonly config: IConfig
+  ) { }
 
   public createConnectionOptions(redisConfig: RedisConfig): Partial<RedisClientOptions> {
-    const { host, port, enableSslAuth, sslPaths, ...clientOptions } = redisConfig;
+    const { host, port, tls, ...clientOptions } = redisConfig;
     clientOptions.socket = { host, port };
-    if (enableSslAuth) {
+    if (tls.enabled) {
       clientOptions.socket = {
         ...clientOptions.socket,
         tls: true,
-        key: sslPaths.key !== '' ? readFileSync(sslPaths.key) : undefined,
-        cert: sslPaths.cert !== '' ? readFileSync(sslPaths.cert) : undefined,
-        ca: sslPaths.ca !== '' ? readFileSync(sslPaths.ca) : undefined,
+        key: tls.key !== '' ? readFileSync(tls.key as string) : undefined,
+        cert: tls.cert !== '' ? readFileSync(tls.cert as string) : undefined,
+        ca: tls.ca !== '' ? readFileSync(tls.ca as string) : undefined,
       };
     }
     return clientOptions;

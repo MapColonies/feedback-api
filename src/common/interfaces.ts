@@ -16,8 +16,7 @@ export interface OpenApiConfig {
 export type RedisConfig = {
   host: string;
   port: number;
-  enableSslAuth: boolean;
-  sslPaths: { ca: string; cert: string; key: string };
+  tls: { enabled: boolean; ca?: string; cert?: string; key?: string };
 } & RedisClientOptions;
 
 export type KafkaOptions = {

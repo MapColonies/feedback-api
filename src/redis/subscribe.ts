@@ -9,7 +9,7 @@ import { RedisClient } from '../redis/index';
 const TTL_PREFIX = 'ttl:';
 
 export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
-  const topic = config.get<string>('outputTopic');
+  const topic = config.get<string>('kafka.outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
   try {
     await kafkaProducer.send({

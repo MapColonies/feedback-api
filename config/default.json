@@ -6,13 +6,19 @@
     "uiPath": "/api"
   },
   "telemetry": {
+    "shared": {
+      "serviceName": "feedback-api"
+    },
+    "tracing": {
+      "isEnabled": false
+    },
     "logger": {
       "level": "info",
       "prettyPrint": false
     }
   },
   "server": {
-    "port": "8080",
+    "port": 8080,
     "request": {
       "payload": {
         "limit": "1mb"
@@ -30,12 +36,10 @@
     "port": 6379,
     "username": "",
     "password": "",
-    "enableSslAuth": false,
-    "sslPaths": {
-      "ca": "",
-      "key": "",
-      "cert": ""
+    "tls": {
+      "enabled": false
     },
+    "connectTimeoutMs": 5000,
     "ttl": 600,
     "expiredResponseTtl": 300
   },
@@ -46,12 +50,16 @@
       "ca": "",
       "key": "",
       "cert": ""
-    }
+    },
+    "consumer": {},
+    "producer": {},
+    "outputTopic": "topic"
   },
-  "kafkaConsumer": {},
-  "kafkaProducer": {},
-  "outputTopic": "topic",
   "application": {
+    "hashKey": {
+      "enabled": false
+    },
     "userValidation": ["@mycompany.net"]
-  }
+  },
+  "schema": {}
 }
