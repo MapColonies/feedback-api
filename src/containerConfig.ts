@@ -47,13 +47,6 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
       {
         token: CLEANUP_REGISTRY,
         provider: { useValue: cleanupRegistry },
-        afterAllInjectionHook(): void {
-          const cleanupRegistryLogger = logger.child({ subComponent: 'cleanupRegistry' });
-
-          cleanupRegistry.on('itemFailed', (id, error, msg) => cleanupRegistryLogger.error({ msg, itemId: id, err: error }));
-          cleanupRegistry.on('itemCompleted', (id) => cleanupRegistryLogger.info({ itemId: id, msg: `cleanup finished for item ${id.toString()}` }));
-          cleanupRegistry.on('finished', (status) => cleanupRegistryLogger.info({ msg: `cleanup registry finished cleanup`, status }));
-        },
       },
       {
         token: SERVICES.KAFKA,
