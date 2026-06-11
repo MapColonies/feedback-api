@@ -1,10 +1,9 @@
-import config from 'config';
 import { Producer } from 'kafkajs';
 import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
 import { HealthCheck } from '@godaddy/terminus';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
-import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
+import { jsLogger } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
@@ -15,6 +14,7 @@ import { InjectionObject, registerDependencies } from './common/dependencyRegist
 import { healthCheckFunctionFactory, RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
+import { getConfig } from './common/config';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -25,8 +25,10 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
   const cleanupRegistry = new CleanupRegistry();
 
   try {
-    const loggerConfig = config.get<LoggerOptions>('telemetry.logger');
-    const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+    const configInstance = getConfig();
+
+    const loggerConfig = configInstance.get('telemetry.logger');
+    const logger = await jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
 
     const metrics = new Metrics();
     cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
@@ -37,7 +39,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     const tracer = trace.getTracer(SERVICE_NAME);
 
     const dependencies: InjectionObject<unknown>[] = [
-      { token: SERVICES.CONFIG, provider: { useValue: config } },
+      { token: SERVICES.CONFIG, provider: { useValue: configInstance } },
       { token: SERVICES.LOGGER, provider: { useValue: logger } },
       { token: SERVICES.TRACER, provider: { useValue: tracer } },
       { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
