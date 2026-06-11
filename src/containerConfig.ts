@@ -1,20 +1,19 @@
 import { Producer } from 'kafkajs';
-import { getOtelMixin } from '@map-colonies/telemetry';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
 import { HealthCheck } from '@godaddy/terminus';
 import { DependencyContainer } from 'tsyringe/dist/typings/types';
 import { jsLogger } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
-import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
-import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
 import { healthCheckFunctionFactory, RedisClient, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
 import { getConfig } from './common/config';
+import { Registry } from 'prom-client';
+import { getOtelMixin } from '@map-colonies/tracing-utils';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -29,20 +28,16 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
     const loggerConfig = configInstance.get('telemetry.logger');
     const logger = await jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+    const metricsRegistry = new Registry();
+    configInstance.initializeMetrics(metricsRegistry);
 
-    const metrics = new Metrics();
-    cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
-    metrics.start();
-
-    cleanupRegistry.register({ func: tracing.stop.bind(tracing), id: SERVICES.TRACER });
-    tracing.start();
     const tracer = trace.getTracer(SERVICE_NAME);
 
     const dependencies: InjectionObject<unknown>[] = [
       { token: SERVICES.CONFIG, provider: { useValue: configInstance } },
       { token: SERVICES.LOGGER, provider: { useValue: logger } },
       { token: SERVICES.TRACER, provider: { useValue: tracer } },
-      { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
+      { token: SERVICES.METRICS, provider: { useValue: metricsRegistry } },
       { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
       {
         token: CLEANUP_REGISTRY,

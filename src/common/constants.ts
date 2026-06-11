@@ -11,6 +11,7 @@ export const SERVICES = {
   LOGGER: Symbol('Logger'),
   CONFIG: Symbol('Config'),
   TRACER: Symbol('Tracer'),
+  METRICS: Symbol('METRICS'),
   METER: Symbol('Meter'),
   REDIS: Symbol('Redis'),
   KAFKA: Symbol('Kafka'),
