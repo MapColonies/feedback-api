@@ -1,17 +1,17 @@
 import express, { Router } from 'express';
 import bodyParser from 'body-parser';
 import compression from 'compression';
-import { OpenapiViewerRouter, OpenapiRouterConfig } from '@map-colonies/openapi-express-viewer';
+import { OpenapiViewerRouter } from '@map-colonies/openapi-express-viewer';
 import { getErrorHandlerMiddleware } from '@map-colonies/error-express-handler';
 import { middleware as OpenApiMiddleware } from 'express-openapi-validator';
 import { inject, injectable } from 'tsyringe';
 import { type Logger } from '@map-colonies/js-logger';
 import { httpLogger } from '@map-colonies/express-access-log-middleware';
-import { SERVICES } from './common/constants';
 import { collectMetricsExpressMiddleware } from '@map-colonies/prometheus';
+import { Registry } from 'prom-client';
+import { SERVICES } from './common/constants';
 import { FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
 import { type ConfigType } from './common/config';
-import { Registry } from 'prom-client';
 
 @injectable()
 export class ServerBuilder {

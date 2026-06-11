@@ -24,7 +24,7 @@ export class FeedbackManager {
     const ttl = this.config.get<number>('redis.ttl');
     const prefix = this.config.has('redis.prefix') ? this.config.get<string>('redis.prefix') : undefined;
 
-    const validateUser = !userValidation.some((validEnding) => validEnding && userId.endsWith(validEnding));
+    const validateUser = !userValidation.some((validEnding) => validEnding !== '' && userId.endsWith(validEnding));
     if (validateUser) {
       throw new BadRequestError(`user_id not valid. valid user_id ends with "${JSON.stringify(userValidation)}"`);
     }
