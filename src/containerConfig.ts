@@ -1,19 +1,21 @@
-import { Producer } from 'kafkajs';
+import type { Producer } from 'kafkajs';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
-import { HealthCheck } from '@godaddy/terminus';
-import { DependencyContainer } from 'tsyringe/dist/typings/types';
+import type { HealthCheck } from '@godaddy/terminus';
+import type { DependencyContainer } from 'tsyringe/dist/typings/types';
 import { jsLogger } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
+import { Registry } from 'prom-client';
+import { getOtelMixin } from '@map-colonies/tracing-utils';
 import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
-import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, RedisClientFactory } from './redis';
+import type { InjectionObject } from './common/dependencyRegistration';
+import { registerDependencies } from './common/dependencyRegistration';
+import type { RedisClient } from './redis';
+import { healthCheckFunctionFactory, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
 import { getConfig } from './common/config';
-import { Registry } from 'prom-client';
-import { getOtelMixin } from '@map-colonies/tracing-utils';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -32,12 +34,14 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     configInstance.initializeMetrics(metricsRegistry);
 
     const tracer = trace.getTracer(SERVICE_NAME);
+    const meter = OtelMetrics.getMeter(SERVICE_NAME);
 
     const dependencies: InjectionObject<unknown>[] = [
       { token: SERVICES.CONFIG, provider: { useValue: configInstance } },
       { token: SERVICES.LOGGER, provider: { useValue: logger } },
       { token: SERVICES.TRACER, provider: { useValue: tracer } },
       { token: SERVICES.METRICS, provider: { useValue: metricsRegistry } },
+      { token: SERVICES.METER, provider: { useValue: meter } },
       { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
       {
         token: CLEANUP_REGISTRY,

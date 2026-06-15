@@ -1,25 +1,28 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as crypto from 'node:crypto';
-import config, { IConfig } from 'config';
-import jsLogger, { Logger } from '@map-colonies/js-logger';
-import { DependencyContainer } from 'tsyringe';
-import { Producer } from 'kafkajs';
+import type { IConfig } from 'config';
+import config from 'config';
+import { jsLogger, type Logger } from '@map-colonies/js-logger';
+import type { DependencyContainer } from 'tsyringe';
+import type { Producer } from 'kafkajs';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
-import { CleanupRegistry } from '@map-colonies/cleanup-registry';
-import { getApp } from '../../../src/app';
-import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '../../../src/common/constants';
-import { IFeedbackModel } from '../../../src/feedback/models/feedback';
-import { FeedbackResponse, GeocodingResponse } from '../../../src/common/interfaces';
-import { RedisClient } from '../../../src/redis';
-import { getNoChosenGeocodingResponse, send } from '../../../src/redis/subscribe';
-import { NotFoundError } from '../../../src/common/errors';
+import type { CleanupRegistry } from '@map-colonies/cleanup-registry';
+import { vi, describe, beforeAll, afterAll, it, expect, type Mock, type MockedObject } from 'vitest';
+import { getApp } from '@src/app';
+import { initConfig } from '@src/common/config';
+import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '@src/common/constants';
+import type { IFeedbackModel } from '@src/feedback/models/feedback';
+import type { FeedbackResponse, GeocodingResponse } from '@src/common/interfaces';
+import type { RedisClient } from '@src/redis';
+import { getNoChosenGeocodingResponse, send } from '@src/redis/subscribe';
+import { NotFoundError } from '@src/common/errors';
 import { FeedbackRequestSender } from './helpers/requestSender';
 
 const mockKafkaProducer = {
-  connect: jest.fn(),
-  send: jest.fn(),
-} as unknown as jest.Mocked<Producer>;
+  connect: vi.fn(),
+  send: vi.fn(),
+} as unknown as MockedObject<Producer>;
 
 describe('feedback', function () {
   let requestSender: FeedbackRequestSender;
@@ -27,9 +30,11 @@ describe('feedback', function () {
   let depContainer: DependencyContainer;
 
   beforeAll(async function () {
+    await initConfig(true);
+    const logger = await jsLogger({ enabled: false });
     const { app, container } = await getApp({
       override: [
-        { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
+        { token: SERVICES.LOGGER, provider: { useValue: logger } },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
         { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
       ],
@@ -47,7 +52,7 @@ describe('feedback', function () {
   });
 
   describe('Happy Path', function () {
-    it('Should return 204 status code and create the feedback', async function () {
+    it('should return 204 status code and create the feedback', async function () {
       const geocodingResponse: GeocodingResponse = {
         userId: '1',
         apiKey: '1',
@@ -68,7 +73,7 @@ describe('feedback', function () {
       expect(response.status).toBe(httpStatusCodes.NO_CONTENT);
     });
 
-    it('Redis key should not exist in geocodingIndex after TTL has passed', async function () {
+    it('should not have redis key in geocodingIndex after TTL has passed', async function () {
       const redisTtl = config.get<number>('redis.expiredResponseTtl');
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
@@ -79,14 +84,16 @@ describe('feedback', function () {
       const redisKey = crypto.randomUUID();
 
       await redisClient.set(redisKey, JSON.stringify(geocodingResponse));
-      expect(await redisClient.exists(redisKey)).toBe(1);
+
+      await expect(redisClient.exists(redisKey)).resolves.toBe(1);
 
       await new Promise((resolve) => setTimeout(resolve, (redisTtl + 1) * 1000));
-      expect(await redisClient.exists(redisKey)).toBe(0);
+
+      await expect(redisClient.exists(redisKey)).resolves.toBe(0);
     });
 
-    it('Should send feedback to kafka also when no response was chosen', async function () {
-      const topic = config.get<string>('outputTopic');
+    it('should send feedback to kafka also when no response was chosen', async function () {
+      const topic = config.get<string>('kafka.outputTopic');
       const requestId = crypto.randomUUID();
       const redisTtl = config.get<number>('redis.expiredResponseTtl');
 
@@ -137,9 +144,10 @@ describe('feedback', function () {
           },
         };
 
+        const innerLogger = await jsLogger({ enabled: false });
         const mockRegisterOptions = {
           override: [
-            { token: SERVICES.LOGGER, provider: { useValue: jsLogger({ enabled: false }) } },
+            { token: SERVICES.LOGGER, provider: { useValue: innerLogger } },
             { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
             { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
             { token: SERVICES.CONFIG, provider: { useValue: configWithPrefix } },
@@ -169,6 +177,7 @@ describe('feedback', function () {
         const response = await localRequestSender.createFeedback(feedbackModel);
 
         const keys = await redisConnection.keys(prefix + '*');
+
         expect(keys.length).toBeGreaterThanOrEqual(1);
         expect(response.status).toBe(httpStatusCodes.NO_CONTENT);
 
@@ -186,56 +195,58 @@ describe('feedback', function () {
   });
 
   describe('Bad Path', function () {
-    it('Should return 400 status code since the chosen_result_id is a string', async function () {
+    it('should return 400 status code since the chosen_result_id is a string', async function () {
       const feedbackModel: unknown = {
         requestId: crypto.randomUUID(),
         chosen_result_id: '1',
         user_id: 'user1@mycompany.net',
       };
       const response = await requestSender.createFeedback(feedbackModel as IFeedbackModel);
+
       expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
     });
 
-    it('Should return 400 status code because user_id is not valid', async function () {
+    it('should return 400 status code because user_id is not valid', async function () {
       const feedbackModel: IFeedbackModel = {
         request_id: crypto.randomUUID(),
         chosen_result_id: 1,
         user_id: 'user1',
       };
       const response = await requestSender.createFeedback(feedbackModel);
+
       expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
     });
 
-    it('Should return 400 status code when redis is unavailable', async function () {
+    it('should return 400 status code when redis is unavailable', async function () {
       const mockRedis = {
-        get: jest.fn(),
-      } as unknown as jest.Mocked<RedisClient>;
+        get: vi.fn(),
+      } as unknown as MockedObject<RedisClient>;
 
       const mockLogger = {
-        error: jest.fn(),
-        info: jest.fn(),
-      } as unknown as jest.Mocked<Logger>;
+        error: vi.fn(),
+        info: vi.fn(),
+      } as unknown as MockedObject<Logger>;
 
       const requestId = crypto.randomUUID();
 
       depContainer.register(SERVICES.REDIS, { useValue: mockRedis });
       depContainer.register(SERVICES.LOGGER, { useValue: mockLogger });
 
-      (mockRedis.get as jest.Mock).mockRejectedValue(new Error('Redis get failed'));
+      (mockRedis.get as Mock).mockRejectedValue(new Error('Redis get failed'));
 
       try {
         await getNoChosenGeocodingResponse(requestId, mockLogger, mockRedis);
-      } catch (error) {
-        // eslint-disable-next-line jest/no-conditional-expect
+      } catch {
+        // eslint-disable-next-line vitest/no-conditional-expect
         expect(mockLogger.error).toHaveBeenCalledWith({ msg: 'Redis Error: Redis get failed' });
       }
     });
 
-    it('Should throw an error when uploading to Kafka fails', async function () {
+    it('should throw an error when uploading to Kafka fails', async function () {
       const mockLogger = {
-        error: jest.fn(),
-        info: jest.fn(),
-      } as unknown as jest.Mocked<Logger>;
+        error: vi.fn(),
+        info: vi.fn(),
+      } as unknown as MockedObject<Logger>;
 
       const feedbackResponse: FeedbackResponse = {
         requestId: crypto.randomUUID(),
@@ -253,8 +264,8 @@ describe('feedback', function () {
 
       try {
         await send(feedbackResponse, mockLogger, config, mockKafkaProducer);
-      } catch (error) {
-        // eslint-disable-next-line jest/no-conditional-expect
+      } catch {
+        // eslint-disable-next-line vitest/no-conditional-expect
         expect(mockLogger.error).toHaveBeenCalledWith({
           msg: 'Error uploading response to kafka',
           message: feedbackResponse,
@@ -264,7 +275,7 @@ describe('feedback', function () {
   });
 
   describe('Sad Path', function () {
-    it('Should return 404 status code since the feedback does not exist', async function () {
+    it('should return 404 status code since the feedback does not exist', async function () {
       const feedbackModel: IFeedbackModel = {
         request_id: crypto.randomUUID(),
         chosen_result_id: 1,
@@ -275,20 +286,20 @@ describe('feedback', function () {
       expect(response.status).toBe(httpStatusCodes.NOT_FOUND);
     });
 
-    it('Should return 404 status code when request is not found in redis', async function () {
+    it('should return 404 status code when request is not found in redis', async function () {
       const mockRedis = {
-        get: jest.fn(),
-      } as unknown as jest.Mocked<RedisClient>;
+        get: vi.fn(),
+      } as unknown as MockedObject<RedisClient>;
 
       const mockLogger = {
-        error: jest.fn(),
-        info: jest.fn(),
-      } as unknown as jest.Mocked<Logger>;
+        error: vi.fn(),
+        info: vi.fn(),
+      } as unknown as MockedObject<Logger>;
 
       depContainer.register(SERVICES.REDIS, { useValue: mockRedis });
       const requestId = crypto.randomUUID();
 
-      (mockRedis.get as jest.Mock).mockResolvedValue(null);
+      (mockRedis.get as Mock).mockResolvedValue(null);
 
       await expect(getNoChosenGeocodingResponse(requestId, mockLogger, mockRedis)).rejects.toThrow(
         new NotFoundError(`The current request was not found ${requestId}`)

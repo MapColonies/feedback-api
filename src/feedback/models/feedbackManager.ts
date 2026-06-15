@@ -22,7 +22,7 @@ export class FeedbackManager {
     const raw = this.config.get<string | string[]>('application.userValidation');
     const userValidation = Array.isArray(raw) ? raw : (JSON.parse(raw) as string[]);
     const ttl = this.config.get<number>('redis.ttl');
-    const prefix = this.config.has('redis.prefix') ? this.config.get<string>('redis.prefix') : undefined;
+    const prefix = this.config.get<string | undefined>('redis.prefix');
 
     const validateUser = !userValidation.some((validEnding) => validEnding !== '' && userId.endsWith(validEnding));
     if (validateUser) {

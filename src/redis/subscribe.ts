@@ -1,10 +1,10 @@
-import { Logger } from '@map-colonies/js-logger';
-import { DependencyContainer } from 'tsyringe';
-import { Producer } from 'kafkajs';
+import type { Logger } from '@map-colonies/js-logger';
+import type { DependencyContainer } from 'tsyringe';
+import type { Producer } from 'kafkajs';
 import { REDIS_SUB, SERVICES } from '../common/constants';
-import { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfaces';
+import type { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfaces';
 import { NotFoundError } from '../common/errors';
-import { RedisClient } from '../redis/index';
+import type { RedisClient } from '../redis/index';
 
 const TTL_PREFIX = 'ttl:';
 
@@ -31,8 +31,9 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   logger.debug('Redis subscriber init');
+  await redisClient.sendCommand(['CONFIG', 'SET', 'notify-keyspace-events', 'KEA']);
   const redisTTL = config.get<number>('redis.expiredResponseTtl');
-  const redisPrefix = config.has('redis.prefix') ? config.get<string>('redis.prefix') : undefined;
+  const redisPrefix = config.get<string | undefined>('redis.prefix');
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;
   await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
