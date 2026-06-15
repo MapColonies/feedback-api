@@ -75,7 +75,7 @@ jobs:
 
     services:
       redis:
-        image: redis:7.2.3
+        image: redis:8.8.0
         env:
           ALLOW_EMPTY_PASSWORD: yes
         ports:
