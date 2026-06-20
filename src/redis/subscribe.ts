@@ -1,15 +1,16 @@
 import type { Logger } from '@map-colonies/js-logger';
 import type { DependencyContainer } from 'tsyringe';
 import type { Producer } from 'kafkajs';
+import type { ConfigType } from '@src/common/config';
 import { REDIS_SUB, SERVICES } from '../common/constants';
-import type { IConfig, FeedbackResponse, GeocodingResponse } from '../common/interfaces';
+import type { FeedbackResponse, GeocodingResponse } from '../common/interfaces';
 import { NotFoundError } from '../common/errors';
 import type { RedisClient } from '../redis/index';
 
 const TTL_PREFIX = 'ttl:';
 
-export const send = async (message: FeedbackResponse, logger: Logger, config: IConfig, kafkaProducer: Producer): Promise<void> => {
-  const topic = config.get<string>('kafka.outputTopic');
+export const send = async (message: FeedbackResponse, logger: Logger, config: ConfigType, kafkaProducer: Producer): Promise<void> => {
+  const topic = config.get('kafka.outputTopic');
   logger.info(`Kafka send message. Topic: ${topic}`);
   try {
     await kafkaProducer.send({
@@ -25,15 +26,15 @@ export const send = async (message: FeedbackResponse, logger: Logger, config: IC
 
 export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisClient> => {
   const redisClient = deps.resolve<RedisClient>(SERVICES.REDIS);
-  const config = deps.resolve<IConfig>(SERVICES.CONFIG);
+  const config = deps.resolve<ConfigType>(SERVICES.CONFIG);
   const kafkaProducer = deps.resolve<Producer>(SERVICES.KAFKA);
   const logger = deps.resolve<Logger>(SERVICES.LOGGER);
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   logger.debug('Redis subscriber init');
   await redisClient.sendCommand(['CONFIG', 'SET', 'notify-keyspace-events', 'KEA']);
-  const redisTTL = config.get<number>('redis.expiredResponseTtl');
-  const redisPrefix = config.get<string | undefined>('redis.prefix');
+  const redisTTL = config.get('redis.expiredResponseTtl');
+  const redisPrefix = config.get('redis.prefix');
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;
   await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
@@ -70,7 +71,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
 export const sendNoChosenResult = async (
   requestId: string,
   logger: Logger,
-  config: IConfig,
+  config: ConfigType,
   kafkaProducer: Producer,
   redisClient: RedisClient
 ): Promise<void> => {

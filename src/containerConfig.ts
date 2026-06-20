@@ -2,7 +2,7 @@ import type { Producer } from 'kafkajs';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
 import type { HealthCheck } from '@godaddy/terminus';
 import type { DependencyContainer } from 'tsyringe/dist/typings/types';
-import { jsLogger } from '@map-colonies/js-logger';
+import { jsLogger, type Logger } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
 import { Registry } from 'prom-client';
@@ -15,7 +15,7 @@ import type { RedisClient } from './redis';
 import { healthCheckFunctionFactory, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
-import { getConfig } from './common/config';
+import { getConfig, type ConfigType } from './common/config';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -26,22 +26,31 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
   const cleanupRegistry = new CleanupRegistry();
 
   try {
-    const configInstance = getConfig();
-
-    const loggerConfig = configInstance.get('telemetry.logger');
-    const logger = await jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
-    const metricsRegistry = new Registry();
-    configInstance.initializeMetrics(metricsRegistry);
-
-    const tracer = trace.getTracer(SERVICE_NAME);
-    const meter = OtelMetrics.getMeter(SERVICE_NAME);
-
     const dependencies: InjectionObject<unknown>[] = [
-      { token: SERVICES.CONFIG, provider: { useValue: configInstance } },
-      { token: SERVICES.LOGGER, provider: { useValue: logger } },
-      { token: SERVICES.TRACER, provider: { useValue: tracer } },
-      { token: SERVICES.METRICS, provider: { useValue: metricsRegistry } },
-      { token: SERVICES.METER, provider: { useValue: meter } },
+      { token: SERVICES.CONFIG, provider: { useValue: getConfig() } },
+      {
+        token: SERVICES.LOGGER,
+        provider: {
+          useFactory: instancePerContainerCachingFactory(async (container) => {
+            const config = container.resolve<ConfigType>(SERVICES.CONFIG);
+            const loggerConfig = config.get('telemetry.logger');
+            return jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+          }),
+        },
+      },
+      { token: SERVICES.TRACER, provider: { useFactory: instancePerContainerCachingFactory(() => trace.getTracer(SERVICE_NAME)) } },
+      {
+        token: SERVICES.METRICS,
+        provider: {
+          useFactory: instancePerContainerCachingFactory((container) => {
+            const config = container.resolve<ConfigType>(SERVICES.CONFIG);
+            const metricsRegistry = new Registry();
+            config.initializeMetrics(metricsRegistry);
+            return metricsRegistry;
+          }),
+        },
+      },
+      { token: SERVICES.METER, provider: { useFactory: instancePerContainerCachingFactory(() => OtelMetrics.getMeter(SERVICE_NAME)) } },
       { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
       {
         token: CLEANUP_REGISTRY,
@@ -59,6 +68,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
             },
             id: SERVICES.KAFKA,
           });
+          const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
           try {
             await kafkaProducer.connect();
             logger.info('Connected to Kafka');
@@ -87,7 +97,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
             let redisName = redisIndex.toString();
             redisName = redisName.substring(redisName.indexOf('(') + 1, redisName.lastIndexOf(')'));
-            logger.info(`Connected to ${redisName}`);
+            (await deps.resolve<Promise<Logger>>(SERVICES.LOGGER)).info(`Connected to ${redisName}`);
 
             if (redisIndex === REDIS_SUB) {
               await redisSubscribe(deps);

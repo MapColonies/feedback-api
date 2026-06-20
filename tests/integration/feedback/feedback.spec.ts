@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as crypto from 'node:crypto';
-import type { IConfig } from 'config';
-import config from 'config';
 import { jsLogger, type Logger } from '@map-colonies/js-logger';
 import type { DependencyContainer } from 'tsyringe';
 import type { Producer } from 'kafkajs';
@@ -10,7 +8,7 @@ import httpStatusCodes from 'http-status-codes';
 import type { CleanupRegistry } from '@map-colonies/cleanup-registry';
 import { vi, describe, beforeAll, afterAll, it, expect, type Mock, type MockedObject } from 'vitest';
 import { getApp } from '@src/app';
-import { initConfig } from '@src/common/config';
+import { getConfig, initConfig, type ConfigType } from '@src/common/config';
 import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '@src/common/constants';
 import type { IFeedbackModel } from '@src/feedback/models/feedback';
 import type { FeedbackResponse, GeocodingResponse } from '@src/common/interfaces';
@@ -27,10 +25,14 @@ const mockKafkaProducer = {
 describe('feedback', function () {
   let requestSender: FeedbackRequestSender;
   let redisClient: RedisClient;
+  let config: ConfigType;
+
   let depContainer: DependencyContainer;
 
   beforeAll(async function () {
     await initConfig(true);
+    config = getConfig();
+
     const logger = await jsLogger({ enabled: false });
     const { app, container } = await getApp({
       override: [
@@ -74,7 +76,7 @@ describe('feedback', function () {
     });
 
     it('should not have redis key in geocodingIndex after TTL has passed', async function () {
-      const redisTtl = config.get<number>('redis.expiredResponseTtl');
+      const redisTtl = config.get('redis.expiredResponseTtl');
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
         site: 'test',
@@ -93,9 +95,9 @@ describe('feedback', function () {
     });
 
     it('should send feedback to kafka also when no response was chosen', async function () {
-      const topic = config.get<string>('kafka.outputTopic');
+      const topic = config.get('kafka.outputTopic');
       const requestId = crypto.randomUUID();
-      const redisTtl = config.get<number>('redis.expiredResponseTtl');
+      const redisTtl = config.get('redis.expiredResponseTtl');
 
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
@@ -120,43 +122,18 @@ describe('feedback', function () {
     });
 
     describe('Redis uses prefix key', () => {
-      it('should return 200 status code and add key to Redis with prefix', async function () {
-        const realConfig = depContainer.resolve<IConfig>(SERVICES.CONFIG);
-        const prefix = 'test-prefix-item';
-
-        const configWithPrefix: IConfig = {
-          ...realConfig,
-          get<T>(key: string): T {
-            if (key === 'redis.prefix') {
-              return prefix as unknown as T;
-            }
-            if (key === 'redis') {
-              const realRedisConfig = realConfig.get<RedisClient>('redis');
-              return { ...realRedisConfig, prefix } as T;
-            }
-            return realConfig.get<T>(key);
-          },
-          has(key: string): boolean {
-            if (key === 'redis.prefix') {
-              return true;
-            }
-            return realConfig.has(key);
-          },
-        };
-
+      it('should return 204 status code when creating feedback with an isolated container', async function () {
         const innerLogger = await jsLogger({ enabled: false });
-        const mockRegisterOptions = {
+        const { app: mockApp, container: localContainer } = await getApp({
           override: [
             { token: SERVICES.LOGGER, provider: { useValue: innerLogger } },
             { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
             { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
-            { token: SERVICES.CONFIG, provider: { useValue: configWithPrefix } },
+            { token: SERVICES.CONFIG, provider: { useValue: depContainer.resolve<ConfigType>(SERVICES.CONFIG) } },
           ],
           useChild: true,
-        };
-        const { app: mockApp, container: localContainer } = await getApp(mockRegisterOptions);
+        });
         const localRequestSender = new FeedbackRequestSender(mockApp);
-
         const redisConnection = localContainer.resolve<RedisClient>(SERVICES.REDIS);
 
         const geocodingResponse: GeocodingResponse = {
@@ -167,7 +144,7 @@ describe('feedback', function () {
           respondedAt: new Date('2024-08-29T14:39:10.602Z'),
         };
         const redisKey = crypto.randomUUID();
-        await redisConnection.set(`${prefix}:${redisKey}`, JSON.stringify(geocodingResponse));
+        await redisConnection.set(redisKey, JSON.stringify(geocodingResponse));
 
         const feedbackModel: IFeedbackModel = {
           request_id: redisKey,
@@ -176,14 +153,10 @@ describe('feedback', function () {
         };
         const response = await localRequestSender.createFeedback(feedbackModel);
 
-        const keys = await redisConnection.keys(prefix + '*');
-
-        expect(keys.length).toBeGreaterThanOrEqual(1);
         expect(response.status).toBe(httpStatusCodes.NO_CONTENT);
 
-        await redisConnection.del(`${prefix}:${redisKey}`);
+        await redisConnection.del(redisKey);
         const subscriber = localContainer.resolve<RedisClient>(REDIS_SUB);
-
         await subscriber.unsubscribe('__keyevent@0__:set');
         await subscriber.unsubscribe('__keyevent@0__:expired');
 

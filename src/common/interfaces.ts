@@ -1,10 +1,4 @@
-import { BrokersFunction, KafkaConfig } from 'kafkajs';
-import { RedisClientOptions } from 'redis';
-
-export interface IConfig {
-  get: <T>(setting: string) => T;
-  has: (setting: string) => boolean;
-}
+import type { vectorFeedbackApiV1Type } from '@map-colonies/schemas';
 
 export interface OpenApiConfig {
   filePath: string;
@@ -13,17 +7,13 @@ export interface OpenApiConfig {
   uiPath: string;
 }
 
-export type RedisConfig = {
-  host: string;
-  port: number;
-  tls: { enabled: boolean; ca?: string; cert?: string; key?: string };
-} & RedisClientOptions;
+export type RedisConfig = vectorFeedbackApiV1Type['redis'];
 
-export type KafkaOptions = {
-  brokers: string[] | BrokersFunction;
-  enableSslAuth: boolean;
-  sslPaths: { ca: string; cert: string; key: string };
-} & KafkaConfig;
+export type KafkaOptions = Omit<vectorFeedbackApiV1Type['kafka'], 'brokers' | 'enableSslAuth' | 'sslPaths'> &
+  (
+    | { enableSslAuth: true; sslPaths: { ca: string; cert: string; key: string } }
+    | { enableSslAuth: false; sslPaths?: { ca?: string; cert?: string; key?: string } }
+  );
 
 export interface FeedbackResponse {
   requestId: string;

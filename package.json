@@ -49,7 +49,7 @@
     "@map-colonies/openapi-express-viewer": "^5.0.0",
     "@map-colonies/prometheus": "^1.0.0",
     "@map-colonies/read-pkg": "^2.0.0",
-    "@map-colonies/schemas": "https://ghatmpstorage.blob.core.windows.net/npm-packages/schemas-a1adca3ccebd0e092fc69a47c584d438d94ec3ec.tgz",
+    "@map-colonies/schemas": "https://ghatmpstorage.blob.core.windows.net/npm-packages/schemas-443352b9f3815cb5c190c3033aa545044c0080cc.tgz",
     "@map-colonies/tracing": "^1.0.0",
     "@map-colonies/tracing-utils": "^1.0.0",
     "@map-colonies/tsconfig": "^2.0.0",

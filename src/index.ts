@@ -9,7 +9,7 @@ import { getApp } from './app';
 
 let depContainer: DependencyContainer | undefined;
 
-const port: number = config.get<number>('server.port') || DEFAULT_SERVER_PORT;
+const port: number = config.get('server.port') || DEFAULT_SERVER_PORT;
 
 void getApp()
   .then(({ app, container }) => {
@@ -17,7 +17,6 @@ void getApp()
 
     const logger = depContainer.resolve<Logger>(SERVICES.LOGGER);
     const server = createTerminus(createServer(app), {
-
       healthChecks: { '/liveness': depContainer.resolve(HEALTHCHECK) },
       onSignal: depContainer.resolve(ON_SIGNAL),
     });

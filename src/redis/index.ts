@@ -3,34 +3,35 @@ import { inject, injectable } from 'tsyringe';
 import { type Logger } from '@map-colonies/js-logger';
 import { HealthCheck } from '@godaddy/terminus';
 import { createClient, RedisClientOptions } from 'redis';
+import { type ConfigType } from '@src/common/config';
 import { SERVICES } from '../common/constants';
-import { RedisConfig, type IConfig } from '../common/interfaces';
+import { RedisConfig } from '../common/interfaces';
 import { promiseTimeout } from '../common/utils';
 
 @injectable()
 export class RedisClientFactory {
   public constructor(
     @inject(SERVICES.LOGGER) private readonly logger: Logger,
-    @inject(SERVICES.CONFIG) private readonly config: IConfig
-  ) { }
+    @inject(SERVICES.CONFIG) private readonly config: ConfigType
+  ) {}
 
   public createConnectionOptions(redisConfig: RedisConfig): Partial<RedisClientOptions> {
     const { host, port, tls, ...clientOptions } = redisConfig;
-    clientOptions.socket = { host, port };
-    if (tls.enabled) {
-      clientOptions.socket = {
-        ...clientOptions.socket,
-        tls: true,
-        key: tls.key !== '' ? readFileSync(tls.key as string) : undefined,
-        cert: tls.cert !== '' ? readFileSync(tls.cert as string) : undefined,
-        ca: tls.ca !== '' ? readFileSync(tls.ca as string) : undefined,
-      };
-    }
-    return clientOptions;
+    const socket = tls.enabled
+      ? {
+          host,
+          port,
+          tls: true as const,
+          key: tls.key !== '' ? readFileSync(tls.key) : undefined,
+          cert: tls.cert !== '' ? readFileSync(tls.cert) : undefined,
+          ca: tls.ca !== '' ? readFileSync(tls.ca) : undefined,
+        }
+      : { host, port };
+    return { ...clientOptions, socket };
   }
 
   public createRedisClient(): RedisClient {
-    const dbConfig = this.config.get<RedisConfig>('redis');
+    const dbConfig = this.config.get('redis');
     const connectionOptions = this.createConnectionOptions(dbConfig);
 
     const redisClient = createClient(connectionOptions)
