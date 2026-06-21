@@ -10,7 +10,7 @@ type ExpiredCallback = (message: string) => Promise<void>;
 
 const buildConfig = (prefix?: string): { get: Mock; has: Mock } => ({
   get: vi.fn().mockImplementation((key: string) => {
-    if (key === 'redis.expiredResponseTtl') {
+    if (key === 'redis.ttl') {
       return 300;
     }
     if (key === 'redis.prefix') {
