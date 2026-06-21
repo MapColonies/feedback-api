@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as crypto from 'node:crypto';
 import { jsLogger, type Logger } from '@map-colonies/js-logger';
-import type { DependencyContainer } from 'tsyringe';
+import { instancePerContainerCachingFactory, type DependencyContainer } from 'tsyringe';
 import type { Producer } from 'kafkajs';
 import { trace } from '@opentelemetry/api';
 import httpStatusCodes from 'http-status-codes';
 import type { CleanupRegistry } from '@map-colonies/cleanup-registry';
-import { vi, describe, beforeAll, afterAll, it, expect, type Mock, type MockedObject } from 'vitest';
+import { vi, describe, beforeAll, afterAll, it, expect, type Mock } from 'vitest';
 import { getApp } from '@src/app';
 import { getConfig, initConfig, type ConfigType } from '@src/common/config';
 import { CLEANUP_REGISTRY, REDIS_SUB, SERVICES } from '@src/common/constants';
@@ -15,12 +15,13 @@ import type { FeedbackResponse, GeocodingResponse } from '@src/common/interfaces
 import type { RedisClient } from '@src/redis';
 import { getNoChosenGeocodingResponse, send } from '@src/redis/subscribe';
 import { NotFoundError } from '@src/common/errors';
+import { createMock } from '../../helpers/createMock';
 import { FeedbackRequestSender } from './helpers/requestSender';
 
-const mockKafkaProducer = {
+const mockKafkaProducer = createMock<Producer>({
   connect: vi.fn(),
   send: vi.fn(),
-} as unknown as MockedObject<Producer>;
+});
 
 describe('feedback', function () {
   let requestSender: FeedbackRequestSender;
@@ -33,10 +34,20 @@ describe('feedback', function () {
     await initConfig(true);
     config = getConfig();
 
-    const logger = await jsLogger({ enabled: false });
     const { app, container } = await getApp({
       override: [
-        { token: SERVICES.LOGGER, provider: { useValue: logger } },
+        {
+          token: SERVICES.LOGGER,
+          provider: {
+            useFactory: instancePerContainerCachingFactory(async () => {
+              return jsLogger({ enabled: false });
+            }),
+          },
+          postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+            const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+            deps.register(SERVICES.LOGGER, { useValue: logger });
+          },
+        },
         { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
         { token: SERVICES.KAFKA, provider: { useValue: mockKafkaProducer } },
       ],
@@ -76,7 +87,7 @@ describe('feedback', function () {
     });
 
     it('should not have redis key in geocodingIndex after TTL has passed', async function () {
-      const redisTtl = config.get('redis.expiredResponseTtl');
+      const redisTtl = config.get('redis.ttl');
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
         site: 'test',
@@ -97,7 +108,7 @@ describe('feedback', function () {
     it('should send feedback to kafka also when no response was chosen', async function () {
       const topic = config.get('kafka.outputTopic');
       const requestId = crypto.randomUUID();
-      const redisTtl = config.get('redis.expiredResponseTtl');
+      const redisTtl = config.get('redis.ttl');
 
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
@@ -191,14 +202,14 @@ describe('feedback', function () {
     });
 
     it('should return 400 status code when redis is unavailable', async function () {
-      const mockRedis = {
+      const mockRedis = createMock<RedisClient>({
         get: vi.fn(),
-      } as unknown as MockedObject<RedisClient>;
+      });
 
-      const mockLogger = {
+      const mockLogger = createMock<Logger>({
         error: vi.fn(),
         info: vi.fn(),
-      } as unknown as MockedObject<Logger>;
+      });
 
       const requestId = crypto.randomUUID();
 
@@ -216,10 +227,10 @@ describe('feedback', function () {
     });
 
     it('should throw an error when uploading to Kafka fails', async function () {
-      const mockLogger = {
+      const mockLogger = createMock<Logger>({
         error: vi.fn(),
         info: vi.fn(),
-      } as unknown as MockedObject<Logger>;
+      });
 
       const feedbackResponse: FeedbackResponse = {
         requestId: crypto.randomUUID(),
@@ -260,14 +271,14 @@ describe('feedback', function () {
     });
 
     it('should return 404 status code when request is not found in redis', async function () {
-      const mockRedis = {
+      const mockRedis = createMock<RedisClient>({
         get: vi.fn(),
-      } as unknown as MockedObject<RedisClient>;
+      });
 
-      const mockLogger = {
+      const mockLogger = createMock<Logger>({
         error: vi.fn(),
         info: vi.fn(),
-      } as unknown as MockedObject<Logger>;
+      });
 
       depContainer.register(SERVICES.REDIS, { useValue: mockRedis });
       const requestId = crypto.randomUUID();

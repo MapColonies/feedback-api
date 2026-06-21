@@ -4,6 +4,7 @@ import type { DependencyContainer } from 'tsyringe';
 import { describe, beforeEach, it, expect, vi, type Mock } from 'vitest';
 import { redisSubscribe } from '@src/redis/subscribe';
 import { REDIS_SUB, SERVICES } from '@src/common/constants';
+import { createMock } from '../../helpers/createMock';
 
 type SetCallback = (message: string) => Promise<void>;
 type ExpiredCallback = (message: string) => Promise<void>;
@@ -57,7 +58,7 @@ describe('redisSubscribe', () => {
   });
 
   const setup = async (prefix?: string): Promise<void> => {
-    const mockContainer = {
+    const mockContainer = createMock<DependencyContainer>({
       resolve: vi.fn().mockImplementation((token: symbol) => {
         if (token === SERVICES.REDIS) {
           return mockRedisClient;
@@ -76,7 +77,7 @@ describe('redisSubscribe', () => {
         }
         return undefined;
       }),
-    } as unknown as DependencyContainer;
+    });
 
     await redisSubscribe(mockContainer);
   };

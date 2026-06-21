@@ -9,16 +9,20 @@ import { vi, beforeAll, beforeEach, describe, it, expect, type Mock, type Mocked
 import { FeedbackManager } from '@src/feedback/models/feedbackManager';
 import type { IFeedbackModel } from '@src/feedback/models/feedback';
 import { BadRequestError, NotFoundError } from '@src/common/errors';
+import type { ConfigType } from '@src/common/config';
 import type { RedisClient } from '@src/redis';
+import { createMock } from '../../../helpers/createMock';
 
-interface MockConfig {
-  get: Mock;
-  has: Mock;
-}
+type MockConfig = {
+  [K in keyof ConfigType]: Mock;
+};
 
 const makeConfig = (overrides?: Partial<MockConfig>): MockConfig => ({
   get: vi.fn(),
-  has: vi.fn(),
+  getAll: vi.fn(),
+  getConfigParts: vi.fn(),
+  getResolvedOptions: vi.fn(),
+  initializeMetrics: vi.fn(),
   ...overrides,
 });
 
@@ -44,11 +48,10 @@ const configGetBase = (key: string): unknown => {
   }
 };
 
-const mockProducer = {
+const mockProducer = createMock<Producer>({
   connect: vi.fn(),
   send: vi.fn(),
-} as unknown as MockedObject<Producer>;
-
+});
 
 vi.mock('redis', async () => {
   const actual = await vi.importActual<typeof RedisModule>('redis');
@@ -61,7 +64,6 @@ vi.mock('redis', async () => {
     })),
   };
 });
-
 
 vi.mock('kafkajs', async () => {
   const actual = await vi.importActual<typeof KafkaJsModule>('kafkajs');
@@ -108,7 +110,6 @@ describe('FeedbackManager', () => {
     it('should use redis prefix when configured', async () => {
       const feedbackRequest = makeFeedbackRequest();
       const mockedConfig = makeConfig({
-        has: vi.fn().mockImplementation((key: string) => key === 'redis.prefix'),
         get: vi.fn().mockImplementation((key: string) => {
           if (key === 'redis.prefix') return 'feedback-test';
           return configGetBase(key);
@@ -130,7 +131,6 @@ describe('FeedbackManager', () => {
     it('should not use redis prefix when not configured', async () => {
       const feedbackRequest = makeFeedbackRequest();
       const mockedConfig = makeConfig({
-        has: vi.fn().mockReturnValue(false),
         get: vi.fn().mockImplementation(configGetBase),
       });
 
