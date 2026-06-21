@@ -1,5 +1,5 @@
 import httpStatus from 'http-status-codes';
-import { HttpError } from '@map-colonies/error-express-handler';
+import type { HttpError } from '@map-colonies/error-express-handler';
 
 export class TimeoutError extends Error implements HttpError {
   public readonly status = httpStatus.GATEWAY_TIMEOUT;
