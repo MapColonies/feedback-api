@@ -59,6 +59,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
         if (!(geocodingResponse.wasUsed ?? false)) {
           await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
         }
+
         await redisClient.del(geocodingMessage);
       }
     }
