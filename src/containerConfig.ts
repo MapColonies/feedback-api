@@ -34,8 +34,12 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
           useFactory: instancePerContainerCachingFactory(async (container) => {
             const config = container.resolve<ConfigType>(SERVICES.CONFIG);
             const loggerConfig = config.get('telemetry.logger');
-            return jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
+            return jsLogger({ ...loggerConfig, mixin: getOtelMixin() });
           }),
+        },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+          deps.register(SERVICES.LOGGER, { useValue: logger });
         },
       },
       { token: SERVICES.TRACER, provider: { useFactory: instancePerContainerCachingFactory(() => trace.getTracer(SERVICE_NAME)) } },
@@ -97,7 +101,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
             let redisName = redisIndex.toString();
             redisName = redisName.substring(redisName.indexOf('(') + 1, redisName.lastIndexOf(')'));
-            (await deps.resolve<Promise<Logger>>(SERVICES.LOGGER)).info(`Connected to ${redisName}`);
+            const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+            logger.info(`Connected to ${redisName}`);
 
             if (redisIndex === REDIS_SUB) {
               await redisSubscribe(deps);
