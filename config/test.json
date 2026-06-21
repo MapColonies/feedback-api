@@ -8,11 +8,16 @@
       "enabled": false
     },
     "connectTimeoutMs": 5000,
-    "ttl": 600,
-    "expiredResponseTtl": 2
+    "ttl": 2
   },
   "kafka": {
-    "brokers": "localhost:9092",
+    "brokers": ["localhost:9092"],
+    "enableSslAuth": false,
+    "sslPaths": {
+      "ca": "",
+      "key": "",
+      "cert": ""
+    },
     "consumer": {},
     "producer": {},
     "outputTopic": "testTopic"
