@@ -44,7 +44,7 @@
     "expiredResponseTtl": 300
   },
   "kafka": {
-    "brokers": "KAFKA_URL:9092",
+    "brokers": ["KAFKA_URL:9092"],
     "enableSslAuth": false,
     "sslPaths": {
       "ca": "",

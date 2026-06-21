@@ -33,7 +33,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
 
   logger.debug('Redis subscriber init');
   await redisClient.sendCommand(['CONFIG', 'SET', 'notify-keyspace-events', 'KEA']);
-  const redisTTL = config.get('redis.expiredResponseTtl');
+  const redisTTL = config.get('redis.ttl');
   const redisPrefix = config.get('redis.prefix');
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;

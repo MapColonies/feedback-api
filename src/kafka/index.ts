@@ -15,9 +15,9 @@ export const kafkaClientFactory: FactoryFunction<Producer> = (container: Depende
       brokers: kafkaConfig.brokers.split(','),
       ssl: kafkaConfig.enableSslAuth
         ? {
-            key: readFileSync(kafkaConfig.sslPaths.cert, 'utf-8'),
-            cert: readFileSync(kafkaConfig.sslPaths.cert, 'utf-8'),
-            ca: [readFileSync(kafkaConfig.sslPaths.ca, 'utf-8')],
+            key: readFileSync(kafkaConfig.sslPaths.key!, 'utf-8'),
+            cert: readFileSync(kafkaConfig.sslPaths.cert!, 'utf-8'),
+            ca: [readFileSync(kafkaConfig.sslPaths.ca!, 'utf-8')],
           }
         : undefined,
       sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,

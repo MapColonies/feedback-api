@@ -6,7 +6,7 @@ import { tracingFactory } from './common/tracing.js';
 import { getConfig, initConfig } from './common/config.js';
 
 if (isMainThread) {
-  await initConfig();
+  await initConfig(true);
 
   const config = getConfig();
 
