@@ -9,12 +9,6 @@ export interface OpenApiConfig {
 
 export type RedisConfig = vectorFeedbackApiV1Type['redis'];
 
-export type KafkaOptions = Omit<vectorFeedbackApiV1Type['kafka'], 'brokers' | 'enableSslAuth' | 'sslPaths'> &
-  (
-    | { enableSslAuth: true; sslPaths: { ca: string; cert: string; key: string } }
-    | { enableSslAuth: false; sslPaths?: { ca?: string; cert?: string; key?: string } }
-  );
-
 export interface FeedbackResponse {
   requestId: string;
   chosenResultId: number | null;
