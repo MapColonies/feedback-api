@@ -72,7 +72,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
             },
             id: SERVICES.KAFKA,
           });
-          const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+          const logger = deps.resolve<Logger>(SERVICES.LOGGER);
           try {
             await kafkaProducer.connect();
             logger.info('Connected to Kafka');
@@ -101,7 +101,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
             let redisName = redisIndex.toString();
             redisName = redisName.substring(redisName.indexOf('(') + 1, redisName.lastIndexOf(')'));
-            const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+            const logger = deps.resolve<Logger>(SERVICES.LOGGER);
             logger.info(`Connected to ${redisName}`);
 
             if (redisIndex === REDIS_SUB) {
