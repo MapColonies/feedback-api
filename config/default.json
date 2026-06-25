@@ -6,9 +6,7 @@
     "uiPath": "/api"
   },
   "telemetry": {
-    "shared": {
-      "serviceName": "feedback-api"
-    },
+    "shared": {},
     "tracing": {
       "isEnabled": false
     },
