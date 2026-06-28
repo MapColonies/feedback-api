@@ -38,30 +38,38 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;
   await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
-    const isTtlKey = message.startsWith(TTL_PREFIX) || message.includes(`:${TTL_PREFIX}`);
-    if (!isTtlKey) {
-      logger.info(`Redis: Got new request ${message}`);
+    try {
+      const isTtlKey = message.startsWith(TTL_PREFIX) || message.includes(`:${TTL_PREFIX}`);
+      if (!isTtlKey && redisClient.isOpen) {
+        logger.info(`Redis: Got new request ${message}`);
 
-      const noPrefixMessage = redisPrefix !== undefined ? message.substring(`${redisPrefix}:`.length) : message;
-      const ttlMessage = prefixWithTtl + noPrefixMessage;
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      await redisClient.set(ttlMessage, '', { EX: redisTTL });
+        const noPrefixMessage = redisPrefix !== undefined ? message.substring(`${redisPrefix}:`.length) : message;
+        const ttlMessage = prefixWithTtl + noPrefixMessage;
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        await redisClient.set(ttlMessage, '', { EX: redisTTL });
+      }
+    } catch (error) {
+      logger.error({ msg: 'Redis: failed handling set keyevent', err: error });
     }
   });
 
   await subscriber.subscribe(`__keyevent@0__:expired`, async (message: string) => {
-    if (message.startsWith(prefixWithTtl)) {
-      const geocodingMessage = message.substring(prefixWithTtl.length);
+    try {
+      if (message.startsWith(prefixWithTtl) && redisClient.isOpen) {
+        const geocodingMessage = message.substring(prefixWithTtl.length);
 
-      const redisResponse = await redisClient.get(geocodingMessage);
-      if (redisResponse !== null) {
-        const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
-        if (!(geocodingResponse.wasUsed ?? false)) {
-          await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
+        const redisResponse = await redisClient.get(geocodingMessage);
+        if (redisResponse !== null) {
+          const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+          if (!(geocodingResponse.wasUsed ?? false)) {
+            await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
+          }
+
+          await redisClient.del(geocodingMessage);
         }
-
-        await redisClient.del(geocodingMessage);
       }
+    } catch (error) {
+      logger.error({ msg: 'Redis: failed handling expired keyevent', err: error });
     }
   });
   return subscriber;

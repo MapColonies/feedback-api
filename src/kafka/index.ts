@@ -7,22 +7,19 @@ import { SERVICES } from '../common/constants';
 export const kafkaClientFactory: FactoryFunction<Producer> = (container: DependencyContainer): Producer => {
   const config = container.resolve<ConfigType>(SERVICES.CONFIG);
   process.env['KAFKAJS_NO_PARTITIONER_WARNING'] = '1';
-
   let kafkaConfig = config.get('kafka');
-  if (typeof kafkaConfig.brokers === 'string' || kafkaConfig.brokers instanceof String) {
-    kafkaConfig = {
-      ...kafkaConfig,
-      brokers: kafkaConfig.brokers.split(','),
-      ssl: kafkaConfig.enableSslAuth
-        ? {
-            key: readFileSync(kafkaConfig.sslPaths.key!, 'utf-8'),
-            cert: readFileSync(kafkaConfig.sslPaths.cert!, 'utf-8'),
-            ca: [readFileSync(kafkaConfig.sslPaths.ca!, 'utf-8')],
-          }
-        : undefined,
-      sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,
-    };
-  }
+  kafkaConfig = {
+    ...kafkaConfig,
+    brokers: kafkaConfig.brokers,
+    ssl: kafkaConfig.enableSslAuth
+      ? {
+          key: readFileSync(kafkaConfig.sslPaths.key!, 'utf-8'),
+          cert: readFileSync(kafkaConfig.sslPaths.cert!, 'utf-8'),
+          ca: [readFileSync(kafkaConfig.sslPaths.ca!, 'utf-8')],
+        }
+      : undefined,
+    sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,
+  };
   const producerConfig = config.get('kafka.producer');
   const kafka = new Kafka(kafkaConfig);
   const producer = kafka.producer(producerConfig);

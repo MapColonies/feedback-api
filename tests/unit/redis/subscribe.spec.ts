@@ -26,7 +26,7 @@ const buildConfig = (prefix?: string): { get: Mock; has: Mock } => ({
 });
 
 describe('redisSubscribe', () => {
-  let mockRedisClient: { get: Mock; set: Mock; del: Mock; sendCommand: Mock };
+  let mockRedisClient: { get: Mock; set: Mock; del: Mock; sendCommand: Mock; isOpen: boolean };
   let mockSubscriber: { subscribe: Mock };
   let mockProducer: { send: Mock };
   let logger: Logger;
@@ -41,6 +41,7 @@ describe('redisSubscribe', () => {
       set: vi.fn().mockResolvedValue(undefined),
       del: vi.fn().mockResolvedValue(undefined),
       sendCommand: vi.fn().mockResolvedValue(undefined),
+      isOpen: true,
     };
 
     mockSubscriber = {
