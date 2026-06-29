@@ -32,12 +32,20 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
   const subscriber = deps.resolve<RedisClient>(REDIS_SUB);
 
   logger.debug('Redis subscriber init');
-  await redisClient.sendCommand(['CONFIG', 'SET', 'notify-keyspace-events', 'KEA']);
+  try {
+    await redisClient.sendCommand(['CONFIG', 'SET', 'notify-keyspace-events', 'KEA']);
+  } catch (error) {
+    logger.warn({
+      msg: 'Could not set notify-keyspace-events via CONFIG SET (likely ACL/managed Redis); assuming it is configured server-side',
+      err: error,
+    });
+  }
   const redisTTL = config.get('redis.ttl');
   const redisPrefix = config.get('redis.prefix');
+  const dbIndex = config.get('redis.dbIndex') ?? 0;
 
   const prefixWithTtl = redisPrefix !== undefined ? `${redisPrefix}:${TTL_PREFIX}` : TTL_PREFIX;
-  await subscriber.subscribe(`__keyevent@0__:set`, async (message) => {
+  await subscriber.subscribe(`__keyevent@${dbIndex}__:set`, async (message) => {
     try {
       const isTtlKey = message.startsWith(TTL_PREFIX) || message.includes(`:${TTL_PREFIX}`);
       if (!isTtlKey && redisClient.isOpen) {
@@ -53,7 +61,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
     }
   });
 
-  await subscriber.subscribe(`__keyevent@0__:expired`, async (message: string) => {
+  await subscriber.subscribe(`__keyevent@${dbIndex}__:expired`, async (message: string) => {
     try {
       if (message.startsWith(prefixWithTtl) && redisClient.isOpen) {
         const geocodingMessage = message.substring(prefixWithTtl.length);
