@@ -70,7 +70,7 @@ describe('feedback', function () {
         userId: '1',
         apiKey: '1',
         site: 'test',
-        response: JSON.parse('["USA"]') as JSON,
+        response: ['USA'],
         respondedAt: new Date('2024-08-29T14:39:10.602Z'),
       };
       const redisKey = crypto.randomUUID();
@@ -91,7 +91,7 @@ describe('feedback', function () {
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
         site: 'test',
-        response: JSON.parse('["USA"]') as JSON,
+        response: ['USA'],
         respondedAt: new Date('2024-08-29T14:39:10.602Z'),
       };
       const redisKey = crypto.randomUUID();
@@ -113,7 +113,7 @@ describe('feedback', function () {
       const geocodingResponse: GeocodingResponse = {
         apiKey: '1',
         site: 'test',
-        response: JSON.parse('["USA"]') as JSON,
+        response: ['USA'],
         respondedAt: new Date(),
       };
       await redisClient.set(requestId, JSON.stringify(geocodingResponse));
@@ -151,7 +151,7 @@ describe('feedback', function () {
           userId: '1',
           apiKey: '1',
           site: 'test',
-          response: JSON.parse('["USA"]') as JSON,
+          response: ['USA'],
           respondedAt: new Date('2024-08-29T14:39:10.602Z'),
         };
         const redisKey = crypto.randomUUID();
@@ -240,7 +240,7 @@ describe('feedback', function () {
         geocodingResponse: {
           apiKey: '1',
           site: 'test',
-          response: JSON.parse('["USA"]') as JSON,
+          response: ['USA'],
           respondedAt: new Date(),
         },
       };

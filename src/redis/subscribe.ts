@@ -4,6 +4,7 @@ import type { Producer } from 'kafkajs';
 import type { ConfigType } from '@src/common/config';
 import { REDIS_SUB, SERVICES } from '../common/constants';
 import type { FeedbackResponse, GeocodingResponse } from '../common/interfaces';
+import { parseGeocodingResponse } from '../common/utils';
 import { NotFoundError } from '../common/errors';
 import type { RedisClient } from '../redis/index';
 
@@ -68,7 +69,7 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
 
         const redisResponse = await redisClient.get(geocodingMessage);
         if (redisResponse !== null) {
-          const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+          const geocodingResponse = parseGeocodingResponse(JSON.parse(redisResponse));
           if (!(geocodingResponse.wasUsed ?? false)) {
             await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
           }
@@ -104,7 +105,7 @@ export const getNoChosenGeocodingResponse = async (requestId: string, logger: Lo
   try {
     const redisResponse = await redisClient.get(requestId);
     if (redisResponse != null) {
-      const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+      const geocodingResponse = parseGeocodingResponse(JSON.parse(redisResponse));
       return geocodingResponse;
     }
   } catch (error) {

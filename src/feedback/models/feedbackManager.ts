@@ -3,6 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import { type Producer } from 'kafkajs';
 import { SERVICES } from '@common/constants';
 import { FeedbackResponse, GeocodingResponse } from '@common/interfaces';
+import { parseGeocodingResponse } from '@common/utils';
 import { NotFoundError, BadRequestError } from '@common/errors';
 import { type ConfigType } from '@src/common/config';
 import { type RedisClient } from '../../redis';
@@ -20,12 +21,11 @@ export class FeedbackManager {
   public async createFeedback(feedback: IFeedbackModel, apiKey: string): Promise<FeedbackResponse> {
     const requestId = feedback.request_id;
     const userId = feedback.user_id;
-    const raw = this.config.get('application.userValidation');
-    const userValidation = Array.isArray(raw) ? raw : (JSON.parse(raw) as string[]);
+    const userValidation = this.config.get('application.userValidation');
     const ttl = this.config.get('redis.ttl');
     const prefix = this.config.get('redis.prefix');
 
-    const validateUser = !userValidation.some((validEnding) => validEnding !== '' && userId.endsWith(validEnding));
+    const validateUser = !userValidation.some((validEnding: string) => validEnding !== '' && userId.endsWith(validEnding));
     if (validateUser) {
       throw new BadRequestError(`user_id not valid. valid user_id ends with "${JSON.stringify(userValidation)}"`);
     }
@@ -51,7 +51,7 @@ export class FeedbackManager {
     try {
       const redisResponse = (await this.redisClient.get(requestId)) as string;
       if (redisResponse) {
-        const geocodingResponse = JSON.parse(redisResponse) as GeocodingResponse;
+        const geocodingResponse = parseGeocodingResponse(JSON.parse(redisResponse));
         geocodingResponse.userId = userId;
         geocodingResponse.apiKey = apiKey;
         geocodingResponse.wasUsed = true;
