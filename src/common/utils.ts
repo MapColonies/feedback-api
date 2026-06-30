@@ -1,15 +1,16 @@
 import ajvLib from 'ajv';
-import { TimeoutError } from './errors';
+import { GeocodingResponseParseError, TimeoutError } from './errors';
 import { geocodingResponseSchema, type GeocodingResponse } from './interfaces';
 
 const ajv = new ajvLib();
 const validateGeocodingResponse = ajv.compile<GeocodingResponse>(geocodingResponseSchema);
 
-export function parseGeocodingResponse(data: unknown): GeocodingResponse {
-  if (!validateGeocodingResponse(data)) {
-    throw new Error(`Invalid geocoding response shape: ${ajv.errorsText(validateGeocodingResponse.errors)}`);
+export function parseGeocodingResponse(data: string): GeocodingResponse {
+  const parsed: unknown = JSON.parse(data);
+  if (!validateGeocodingResponse(parsed)) {
+    throw new GeocodingResponseParseError(`Invalid geocoding response shape: ${ajv.errorsText(validateGeocodingResponse.errors)}`);
   }
-  return data;
+  return parsed;
 }
 
 export const promiseTimeout = async <T>(ms: number, promise: Promise<T>): Promise<T> => {

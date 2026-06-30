@@ -49,9 +49,9 @@ export class FeedbackManager {
 
   public async getGeocodingResponse(requestId: string, userId: string, apiKey: string): Promise<GeocodingResponse> {
     try {
-      const redisResponse = (await this.redisClient.get(requestId)) as string;
-      if (redisResponse) {
-        const geocodingResponse = parseGeocodingResponse(JSON.parse(redisResponse));
+      const redisResponse = await this.redisClient.get(requestId);
+      if (redisResponse != null) {
+        const geocodingResponse = parseGeocodingResponse(redisResponse);
         geocodingResponse.userId = userId;
         geocodingResponse.apiKey = apiKey;
         geocodingResponse.wasUsed = true;
