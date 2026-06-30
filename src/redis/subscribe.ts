@@ -5,7 +5,7 @@ import type { ConfigType } from '@src/common/config';
 import { REDIS_SUB, SERVICES } from '../common/constants';
 import type { FeedbackResponse, GeocodingResponse } from '../common/interfaces';
 import { parseGeocodingResponse } from '../common/utils';
-import { NotFoundError } from '../common/errors';
+import { GeocodingResponseParseError, NotFoundError } from '../common/errors';
 import type { RedisClient } from '../redis/index';
 
 const TTL_PREFIX = 'ttl:';
@@ -70,6 +70,12 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
         const redisResponse = await redisClient.get(geocodingMessage);
         if (redisResponse !== null) {
           const geocodingResponse = parseGeocodingResponse(redisResponse);
+
+          if (geocodingResponse instanceof GeocodingResponseParseError) {
+            logger.error({ msg: `Error parsing geocoding response error: ${geocodingResponse.message} }`, err: geocodingResponse });
+            throw geocodingResponse;
+          }
+
           if (!(geocodingResponse.wasUsed ?? false)) {
             await sendNoChosenResult(geocodingMessage, logger, config, kafkaProducer, redisClient);
           }
@@ -106,6 +112,15 @@ export const getNoChosenGeocodingResponse = async (requestId: string, logger: Lo
     const redisResponse = await redisClient.get(requestId);
     if (redisResponse != null) {
       const geocodingResponse = parseGeocodingResponse(redisResponse);
+
+      if (geocodingResponse instanceof GeocodingResponseParseError) {
+        logger.error({
+          msg: `Error parsing geocoding response for requestId: ${requestId}, error: ${geocodingResponse.message} }`,
+          err: geocodingResponse,
+        });
+        throw geocodingResponse;
+      }
+
       return geocodingResponse;
     }
   } catch (error) {

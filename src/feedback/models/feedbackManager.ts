@@ -4,7 +4,7 @@ import { type Producer } from 'kafkajs';
 import { SERVICES } from '@common/constants';
 import { FeedbackResponse, GeocodingResponse } from '@common/interfaces';
 import { parseGeocodingResponse } from '@common/utils';
-import { NotFoundError, BadRequestError } from '@common/errors';
+import { NotFoundError, BadRequestError, GeocodingResponseParseError } from '@common/errors';
 import { type ConfigType } from '@src/common/config';
 import { type RedisClient } from '../../redis';
 import { IFeedbackModel } from './feedback';
@@ -52,6 +52,15 @@ export class FeedbackManager {
       const redisResponse = await this.redisClient.get(requestId);
       if (redisResponse != null) {
         const geocodingResponse = parseGeocodingResponse(redisResponse);
+
+        if (geocodingResponse instanceof GeocodingResponseParseError) {
+          this.logger.error({
+            msg: `Error parsing geocoding response for requestId: ${requestId}, error: ${geocodingResponse.message} }`,
+            err: geocodingResponse,
+          });
+          throw geocodingResponse;
+        }
+
         geocodingResponse.userId = userId;
         geocodingResponse.apiKey = apiKey;
         geocodingResponse.wasUsed = true;

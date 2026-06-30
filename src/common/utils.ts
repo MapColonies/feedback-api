@@ -5,10 +5,10 @@ import { geocodingResponseSchema, type GeocodingResponse } from './interfaces';
 const ajv = new ajvLib();
 const validateGeocodingResponse = ajv.compile<GeocodingResponse>(geocodingResponseSchema);
 
-export function parseGeocodingResponse(data: string): GeocodingResponse {
+export function parseGeocodingResponse(data: string): GeocodingResponse | GeocodingResponseParseError {
   const parsed: unknown = JSON.parse(data);
   if (!validateGeocodingResponse(parsed)) {
-    throw new GeocodingResponseParseError(`Invalid geocoding response shape: ${ajv.errorsText(validateGeocodingResponse.errors)}`);
+    return new GeocodingResponseParseError(`Invalid geocoding response shape: ${ajv.errorsText(validateGeocodingResponse.errors)}`);
   }
   return parsed;
 }
