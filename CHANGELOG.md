@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/MapColonies/feedback-api/compare/v0.2.2...v1.0.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* match boilerplate (MAPCO-10816) ([#18](https://github.com/MapColonies/feedback-api/issues/18))
+
+### Features
+
+* add sasl login to kafka ([#12](https://github.com/MapColonies/feedback-api/issues/12)) ([30249c6](https://github.com/MapColonies/feedback-api/commit/30249c659079f13b3ca9d8a3b7ae0aebd7e5a8e4))
+* get response also when no result was chosen (MAPCO-5804) ([#7](https://github.com/MapColonies/feedback-api/issues/7)) ([844ebc9](https://github.com/MapColonies/feedback-api/commit/844ebc9b28a2b29a49270503d6663316cbe5368f))
+* match boilerplate (MAPCO-10816) ([#18](https://github.com/MapColonies/feedback-api/issues/18)) ([e18d8e1](https://github.com/MapColonies/feedback-api/commit/e18d8e18eb65b0fe88a5e8b4be95e9d1e7d63f19))
+* **project:** feedback api build response ([#1](https://github.com/MapColonies/feedback-api/issues/1)) ([65d3ee7](https://github.com/MapColonies/feedback-api/commit/65d3ee76c0549cc193a1ec1c2fbfa8d2990ccb95))
+* redis prefix and user validation ([#10](https://github.com/MapColonies/feedback-api/issues/10)) ([3b1b9d3](https://github.com/MapColonies/feedback-api/commit/3b1b9d37822b144d4e0084bdd8cb3be743055b96))
+
+
+### Bug Fixes
+
+* add json parse to read as array ([#15](https://github.com/MapColonies/feedback-api/issues/15)) ([287c14c](https://github.com/MapColonies/feedback-api/commit/287c14c51bc4cde333dbe03f8251ab238a4ff70f))
+* added authentication token to parameters ([#5](https://github.com/MapColonies/feedback-api/issues/5)) ([1e3a205](https://github.com/MapColonies/feedback-api/commit/1e3a20563a73d3ffa31c1727c47cb252c5868d40))
+* added ssl to kafka ([#3](https://github.com/MapColonies/feedback-api/issues/3)) ([33a2941](https://github.com/MapColonies/feedback-api/commit/33a294137da158aa89e7e0f07bfe57c4e84fd9eb))
+* GitHub actions workflow (MAPCO-5024) ([#6](https://github.com/MapColonies/feedback-api/issues/6)) ([75d7a2a](https://github.com/MapColonies/feedback-api/commit/75d7a2aa01368e78a4947cff7c5fb0c5e55a3f38))
+* liveness and redis subscriber configuration (MAPCO-6796) ([#8](https://github.com/MapColonies/feedback-api/issues/8)) ([f5aef0d](https://github.com/MapColonies/feedback-api/commit/f5aef0d3b4636eae6201f057a51f9e9146c9dae7))
+* redis float bug (MAPCO-10747) ([0a33202](https://github.com/MapColonies/feedback-api/commit/0a33202334579479fc41fa865cc096083f3eca17))
+* remove redis logical db (MAPCO-6821) ([#9](https://github.com/MapColonies/feedback-api/issues/9)) ([9921a19](https://github.com/MapColonies/feedback-api/commit/9921a1992ba72cdcf50be3925153eb0169a419de))
+
 ### [0.2.1](https://github.com/MapColonies/feedback-api/compare/v0.1.8...v0.2.1) (2026-02-26)
 
 
