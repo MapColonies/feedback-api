@@ -15,7 +15,7 @@ export const kafkaClientFactory: FactoryFunction<Producer> = (container: Depende
       ? {
           key: readFileSync(kafkaConfig.sslPaths.key!, 'utf-8'),
           cert: readFileSync(kafkaConfig.sslPaths.cert!, 'utf-8'),
-          ca: [readFileSync(kafkaConfig.sslPaths.ca!, 'utf-8')],
+          ca: kafkaConfig.sslPaths.ca != null ? [readFileSync(kafkaConfig.sslPaths.ca, 'utf-8')] : undefined,
         }
       : undefined,
     sasl: kafkaConfig.sasl ? { ...kafkaConfig.sasl } : undefined,
