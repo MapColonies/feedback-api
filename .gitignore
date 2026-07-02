@@ -5,6 +5,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+html
 
 # Development tools
 .idea
@@ -110,3 +111,5 @@ dist
 # Jest
 jest_html_reporters.html
 reports
+
+config/local*.json

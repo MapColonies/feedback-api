@@ -1,15 +1,16 @@
-FROM node:20 AS build
+FROM node:24 AS build
 
 
 WORKDIR /tmp/buildApp
 
 COPY ./package*.json ./
+COPY .husky/ .husky/
 
 RUN npm install
 COPY . .
 RUN npm run build
 
-FROM node:20.3.1-alpine3.17 AS production
+FROM node:24.10.0-alpine3.22 AS production
 
 RUN apk add dumb-init
 
@@ -20,6 +21,7 @@ ENV SERVER_PORT=8080
 WORKDIR /usr/src/app
 
 COPY --chown=node:node package*.json ./
+COPY .husky/ .husky/
 
 RUN npm ci --only=production
 
@@ -29,4 +31,4 @@ COPY --chown=node:node ./config ./config
 
 USER node
 EXPOSE 8080
-CMD ["dumb-init", "node", "--max_old_space_size=512", "--require", "./common/tracing.js", "./index.js"]
+CMD ["dumb-init", "node", "--import", "./instrumentation.mjs", "./index.js"]
