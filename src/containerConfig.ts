@@ -1,20 +1,21 @@
-import config from 'config';
-import { Producer } from 'kafkajs';
-import { getOtelMixin } from '@map-colonies/telemetry';
+import type { Producer } from 'kafkajs';
 import { trace, metrics as OtelMetrics } from '@opentelemetry/api';
-import { HealthCheck } from '@godaddy/terminus';
-import { DependencyContainer } from 'tsyringe/dist/typings/types';
-import jsLogger, { LoggerOptions } from '@map-colonies/js-logger';
+import type { HealthCheck } from '@godaddy/terminus';
+import type { DependencyContainer } from 'tsyringe/dist/typings/types';
+import { jsLogger, type Logger } from '@map-colonies/js-logger';
 import { CleanupRegistry } from '@map-colonies/cleanup-registry';
-import { Metrics } from '@map-colonies/telemetry';
 import { instancePerContainerCachingFactory } from 'tsyringe';
+import { Registry } from 'prom-client';
+import { getOtelMixin } from '@map-colonies/tracing-utils';
 import { CLEANUP_REGISTRY, HEALTHCHECK, ON_SIGNAL, REDIS_CLIENT_FACTORY, REDIS_SUB, SERVICES, SERVICE_NAME } from './common/constants';
-import { tracing } from './common/tracing';
 import { feedbackRouterFactory, FEEDBACK_ROUTER_SYMBOL } from './feedback/routes/feedbackRouter';
-import { InjectionObject, registerDependencies } from './common/dependencyRegistration';
-import { healthCheckFunctionFactory, RedisClient, RedisClientFactory } from './redis';
+import type { InjectionObject } from './common/dependencyRegistration';
+import { registerDependencies } from './common/dependencyRegistration';
+import type { RedisClient } from './redis';
+import { healthCheckFunctionFactory, RedisClientFactory } from './redis';
 import { kafkaClientFactory } from './kafka';
 import { redisSubscribe } from './redis/subscribe';
+import { getConfig, type ConfigType } from './common/config';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -25,33 +26,39 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
   const cleanupRegistry = new CleanupRegistry();
 
   try {
-    const loggerConfig = config.get<LoggerOptions>('telemetry.logger');
-    const logger = jsLogger({ ...loggerConfig, prettyPrint: loggerConfig.prettyPrint, mixin: getOtelMixin() });
-
-    const metrics = new Metrics();
-    cleanupRegistry.register({ func: metrics.stop.bind(metrics), id: SERVICES.METER });
-    metrics.start();
-
-    cleanupRegistry.register({ func: tracing.stop.bind(tracing), id: SERVICES.TRACER });
-    tracing.start();
-    const tracer = trace.getTracer(SERVICE_NAME);
-
     const dependencies: InjectionObject<unknown>[] = [
-      { token: SERVICES.CONFIG, provider: { useValue: config } },
-      { token: SERVICES.LOGGER, provider: { useValue: logger } },
-      { token: SERVICES.TRACER, provider: { useValue: tracer } },
-      { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
+      { token: SERVICES.CONFIG, provider: { useValue: getConfig() } },
+      {
+        token: SERVICES.LOGGER,
+        provider: {
+          useFactory: instancePerContainerCachingFactory(async (container) => {
+            const config = container.resolve<ConfigType>(SERVICES.CONFIG);
+            const loggerConfig = config.get('telemetry.logger');
+            return jsLogger({ ...loggerConfig, mixin: getOtelMixin() });
+          }),
+        },
+        postInjectionHook: async (deps: DependencyContainer): Promise<void> => {
+          const logger = await deps.resolve<Promise<Logger>>(SERVICES.LOGGER);
+          deps.register(SERVICES.LOGGER, { useValue: logger });
+        },
+      },
+      { token: SERVICES.TRACER, provider: { useFactory: instancePerContainerCachingFactory(() => trace.getTracer(SERVICE_NAME)) } },
+      {
+        token: SERVICES.METRICS,
+        provider: {
+          useFactory: instancePerContainerCachingFactory((container) => {
+            const config = container.resolve<ConfigType>(SERVICES.CONFIG);
+            const metricsRegistry = new Registry();
+            config.initializeMetrics(metricsRegistry);
+            return metricsRegistry;
+          }),
+        },
+      },
+      { token: SERVICES.METER, provider: { useFactory: instancePerContainerCachingFactory(() => OtelMetrics.getMeter(SERVICE_NAME)) } },
       { token: FEEDBACK_ROUTER_SYMBOL, provider: { useFactory: feedbackRouterFactory } },
       {
         token: CLEANUP_REGISTRY,
         provider: { useValue: cleanupRegistry },
-        afterAllInjectionHook(): void {
-          const cleanupRegistryLogger = logger.child({ subComponent: 'cleanupRegistry' });
-
-          cleanupRegistry.on('itemFailed', (id, error, msg) => cleanupRegistryLogger.error({ msg, itemId: id, err: error }));
-          cleanupRegistry.on('itemCompleted', (id) => cleanupRegistryLogger.info({ itemId: id, msg: `cleanup finished for item ${id.toString()}` }));
-          cleanupRegistry.on('finished', (status) => cleanupRegistryLogger.info({ msg: `cleanup registry finished cleanup`, status }));
-        },
       },
       {
         token: SERVICES.KAFKA,
@@ -65,6 +72,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
             },
             id: SERVICES.KAFKA,
           });
+          const logger = deps.resolve<Logger>(SERVICES.LOGGER);
           try {
             await kafkaProducer.connect();
             logger.info('Connected to Kafka');
@@ -93,6 +101,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
 
             let redisName = redisIndex.toString();
             redisName = redisName.substring(redisName.indexOf('(') + 1, redisName.lastIndexOf(')'));
+            const logger = deps.resolve<Logger>(SERVICES.LOGGER);
             logger.info(`Connected to ${redisName}`);
 
             if (redisIndex === REDIS_SUB) {

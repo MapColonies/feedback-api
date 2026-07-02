@@ -1,33 +1,37 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { inject, injectable } from 'tsyringe';
-import { Logger } from '@map-colonies/js-logger';
+import { type Logger } from '@map-colonies/js-logger';
 import { HealthCheck } from '@godaddy/terminus';
 import { createClient, RedisClientOptions } from 'redis';
+import { type ConfigType } from '@src/common/config';
 import { SERVICES } from '../common/constants';
-import { RedisConfig, IConfig } from '../common/interfaces';
+import { RedisConfig } from '../common/interfaces';
 import { promiseTimeout } from '../common/utils';
 
 @injectable()
 export class RedisClientFactory {
-  public constructor(@inject(SERVICES.LOGGER) private readonly logger: Logger, @inject(SERVICES.CONFIG) private readonly config: IConfig) {}
+  public constructor(
+    @inject(SERVICES.LOGGER) private readonly logger: Logger,
+    @inject(SERVICES.CONFIG) private readonly config: ConfigType
+  ) {}
 
   public createConnectionOptions(redisConfig: RedisConfig): Partial<RedisClientOptions> {
-    const { host, port, enableSslAuth, sslPaths, ...clientOptions } = redisConfig;
-    clientOptions.socket = { host, port };
-    if (enableSslAuth) {
-      clientOptions.socket = {
-        ...clientOptions.socket,
-        tls: true,
-        key: sslPaths.key !== '' ? readFileSync(sslPaths.key) : undefined,
-        cert: sslPaths.cert !== '' ? readFileSync(sslPaths.cert) : undefined,
-        ca: sslPaths.ca !== '' ? readFileSync(sslPaths.ca) : undefined,
-      };
-    }
-    return clientOptions;
+    const { host, port, tls, ...clientOptions } = redisConfig;
+    const socket = tls.enabled
+      ? {
+          host,
+          port,
+          tls: true as const,
+          key: tls.key !== '' ? readFileSync(tls.key) : undefined,
+          cert: tls.cert !== '' ? readFileSync(tls.cert) : undefined,
+          ca: tls.ca !== '' ? readFileSync(tls.ca) : undefined,
+        }
+      : { host, port };
+    return { ...clientOptions, socket };
   }
 
   public createRedisClient(): RedisClient {
-    const dbConfig = this.config.get<RedisConfig>('redis');
+    const dbConfig = this.config.get('redis');
     const connectionOptions = this.createConnectionOptions(dbConfig);
 
     const redisClient = createClient(connectionOptions)

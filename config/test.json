@@ -4,21 +4,24 @@
     "port": 6379,
     "username": "",
     "password": "",
+    "tls": {
+      "enabled": false
+    },
+    "connectTimeoutMs": 5000,
+    "ttl": 2
+  },
+  "kafka": {
+    "brokers": ["localhost:9092"],
     "enableSslAuth": false,
     "sslPaths": {
       "ca": "",
       "key": "",
       "cert": ""
     },
-    "ttl": 600,
-    "expiredResponseTtl": 2
+    "consumer": {},
+    "producer": {},
+    "outputTopic": "testTopic"
   },
-  "kafka": {
-    "brokers": "localhost:9092"
-  },
-  "kafkaConsumer": {},
-  "kafkaProducer": {},
-  "outputTopic": "testTopic",
   "application": {
     "userValidation": ["@mycompany.net"]
   }
