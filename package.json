@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",
-    "@commitlint/config-conventional": "^17.6.6",
+    "@commitlint/config-conventional": "^21.2.0",
     "@map-colonies/eslint-config": "^8.0.0",
     "@map-colonies/prettier-config": "^1.0.0",
     "@map-colonies/standard-version-update-helm-version": "^2.0.1",
