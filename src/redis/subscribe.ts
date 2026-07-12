@@ -66,7 +66,6 @@ export const redisSubscribe = async (deps: DependencyContainer): Promise<RedisCl
     try {
       if (message.startsWith(prefixWithTtl) && redisClient.isOpen) {
         const geocodingMessage = message.substring(prefixWithTtl.length);
-
         const redisResponse = await redisClient.get(geocodingMessage);
         if (redisResponse !== null) {
           const geocodingResponse = parseGeocodingResponse(redisResponse);

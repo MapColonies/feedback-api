@@ -118,7 +118,6 @@ describe('FeedbackManager', () => {
 
       const mockedManager = makeManager(mockedConfig);
       (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
-
       const feedback = await mockedManager.createFeedback(feedbackRequest, 'token');
 
       const expectedKey = `feedback-test:${feedbackRequest.request_id}`;
@@ -157,6 +156,7 @@ describe('FeedbackManager', () => {
     it('should not be able to upload feedback to kafka', async () => {
       const feedbackRequest = makeFeedbackRequest();
       (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
+
       (mockProducer.send as Mock).mockRejectedValue(new Error('Kafka error'));
 
       await expect(feedbackManager.createFeedback(feedbackRequest, 'token')).rejects.toThrow(new Error('Kafka error'));
