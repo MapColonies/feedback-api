@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/MapColonies/feedback-api/compare/v1.0.0...v1.1.0) (2026-07-12)
+
+
+### Features
+
+* add ajv validation (MAPCO-6820) ([#19](https://github.com/MapColonies/feedback-api/issues/19)) ([7227393](https://github.com/MapColonies/feedback-api/commit/7227393f949ece782b067b0f2bbdee16d36f843c))
+
 ## [1.0.0](https://github.com/MapColonies/feedback-api/compare/v0.2.2...v1.0.0) (2026-07-02)
 
 
