@@ -4,7 +4,7 @@ import type { DependencyContainer } from 'tsyringe';
 import { describe, beforeEach, it, expect, vi, type Mock } from 'vitest';
 import { redisSubscribe } from '@src/redis/subscribe';
 import { REDIS_SUB, SERVICES } from '@src/common/constants';
-import { createMock } from '../../helpers/createMock';
+import { createMock, makeGeocodingResponseJson } from '../../helpers/createMock';
 
 type SetCallback = (message: string) => Promise<void>;
 type ExpiredCallback = (message: string) => Promise<void>;
@@ -154,21 +154,21 @@ describe('redisSubscribe', () => {
     beforeEach(async () => setup());
 
     it('should send no-chosen result to Kafka when wasUsed is false', async () => {
-      mockRedisClient.get.mockResolvedValue(JSON.stringify({ wasUsed: false }));
+      mockRedisClient.get.mockResolvedValue(makeGeocodingResponseJson({ wasUsed: false }));
       await expiredCallback('ttl:some-uuid');
 
       expect(mockProducer.send).toHaveBeenCalled();
     });
 
     it('should NOT send to Kafka when wasUsed is true', async () => {
-      mockRedisClient.get.mockResolvedValue(JSON.stringify({ wasUsed: true }));
+      mockRedisClient.get.mockResolvedValue(makeGeocodingResponseJson({ wasUsed: true }));
       await expiredCallback('ttl:some-uuid');
 
       expect(mockProducer.send).not.toHaveBeenCalled();
     });
 
     it('should always delete the original key after expiry', async () => {
-      mockRedisClient.get.mockResolvedValue(JSON.stringify({ wasUsed: true }));
+      mockRedisClient.get.mockResolvedValue(makeGeocodingResponseJson({ wasUsed: true }));
       await expiredCallback('ttl:some-uuid');
 
       expect(mockRedisClient.del).toHaveBeenCalledWith('some-uuid');

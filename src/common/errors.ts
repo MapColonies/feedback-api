@@ -24,3 +24,11 @@ export class BadRequestError extends Error implements HttpError {
     super(message);
   }
 }
+
+export class GeocodingResponseParseError extends Error {
+  public constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, GeocodingResponseParseError.prototype);
+    this.name = 'GeocodingResponseParseError';
+  }
+}

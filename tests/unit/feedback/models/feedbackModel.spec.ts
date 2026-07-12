@@ -11,7 +11,7 @@ import type { IFeedbackModel } from '@src/feedback/models/feedback';
 import { BadRequestError, NotFoundError } from '@src/common/errors';
 import type { ConfigType } from '@src/common/config';
 import type { RedisClient } from '@src/redis';
-import { createMock } from '../../../helpers/createMock';
+import { createMock, makeGeocodingResponseJson } from '../../../helpers/createMock';
 
 type MockConfig = {
   [K in keyof ConfigType]: Mock;
@@ -96,14 +96,14 @@ describe('FeedbackManager', () => {
   describe('#createFeadback', () => {
     it('should create feedback without errors', async () => {
       const feedbackRequest = makeFeedbackRequest();
-      (mockedRedis.get as Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
+      (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
 
       const feedback = await feedbackManager.createFeedback(feedbackRequest, 'token');
 
       expect(feedback.requestId).toBe(feedbackRequest.request_id);
       expect(feedback.chosenResultId).toBe(feedbackRequest.chosen_result_id);
       expect(feedback.userId).toBe(feedbackRequest.user_id);
-      expect(feedback.geocodingResponse).toMatchObject({ geocodingResponse: 'completed' });
+      expect(feedback.geocodingResponse).toMatchObject({ site: 'test-site' });
       expect(mockedRedis.get).toHaveBeenCalledTimes(1);
     });
 
@@ -117,8 +117,7 @@ describe('FeedbackManager', () => {
       });
 
       const mockedManager = makeManager(mockedConfig);
-      (mockedRedis.get as Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
-
+      (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
       const feedback = await mockedManager.createFeedback(feedbackRequest, 'token');
 
       const expectedKey = `feedback-test:${feedbackRequest.request_id}`;
@@ -135,7 +134,7 @@ describe('FeedbackManager', () => {
       });
 
       const mockedManager = makeManager(mockedConfig);
-      (mockedRedis.get as Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
+      (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
 
       await mockedManager.createFeedback(feedbackRequest, 'token');
 
@@ -156,7 +155,8 @@ describe('FeedbackManager', () => {
 
     it('should not be able to upload feedback to kafka', async () => {
       const feedbackRequest = makeFeedbackRequest();
-      (mockedRedis.get as Mock).mockResolvedValue('{ "geocodingResponse": "completed" }');
+      (mockedRedis.get as Mock).mockResolvedValue(makeGeocodingResponseJson());
+
       (mockProducer.send as Mock).mockRejectedValue(new Error('Kafka error'));
 
       await expect(feedbackManager.createFeedback(feedbackRequest, 'token')).rejects.toThrow(new Error('Kafka error'));

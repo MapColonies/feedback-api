@@ -1,3 +1,4 @@
+import { Type, type Static } from '@sinclair/typebox';
 import type { vectorFeedbackApiV1Type } from '@map-colonies/schemas';
 
 export interface OpenApiConfig {
@@ -17,11 +18,13 @@ export interface FeedbackResponse {
   geocodingResponse: GeocodingResponse;
 }
 
-export interface GeocodingResponse {
-  userId?: string;
-  apiKey: string;
-  site: string;
-  response: JSON;
-  respondedAt: Date; // from Geocoding
-  wasUsed?: boolean;
-}
+export const geocodingResponseSchema = Type.Object({
+  userId: Type.Optional(Type.String()),
+  apiKey: Type.String(),
+  site: Type.String(),
+  response: Type.Any(),
+  respondedAt: Type.Unsafe<Date>({ type: 'string' }),
+  wasUsed: Type.Optional(Type.Boolean()),
+});
+
+export type GeocodingResponse = Static<typeof geocodingResponseSchema>;
