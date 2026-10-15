@@ -1,7 +1,11 @@
 import { Tracing } from '@map-colonies/tracing';
-import { IGNORED_INCOMING_TRACE_ROUTES, IGNORED_OUTGOING_TRACE_ROUTES } from './constants';
+import { asyncCallWithSpan } from '@map-colonies/tracing-utils';
+import { trace, type Span, type SpanOptions, type Tracer } from '@opentelemetry/api';
+import { IGNORED_INCOMING_TRACE_ROUTES, IGNORED_OUTGOING_TRACE_ROUTES, SERVICE_NAME } from './constants';
 
 let tracing: Tracing | undefined;
+
+const getServiceTracer = (): Tracer => trace.getTracer(SERVICE_NAME);
 
 export function tracingFactory(options: ConstructorParameters<typeof Tracing>[0]): Tracing {
   tracing = new Tracing({
@@ -28,3 +32,6 @@ export function getTracing(): Tracing {
   }
   return tracing;
 }
+
+export const withSpan = async <T>(spanName: string, spanOptions: SpanOptions, fn: (span?: Span) => Promise<T>): Promise<T> =>
+  asyncCallWithSpan(fn, getServiceTracer(), spanName, spanOptions);
